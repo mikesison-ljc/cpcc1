@@ -3,33 +3,57 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Improved Slider CAPTCHA</title>
+<title>Image Slider CAPTCHA</title>
 <style>
-  body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; margin-top: 50px; }
-  #captcha-container { position: relative; width: 300px; height: 150px; margin-bottom: 20px; border: 1px solid #ccc; }
-  #bg-image { width: 100%; height: 100%; display: block; }
+  body {
+    font-family: sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 50px;
+  }
+  #captcha-container {
+    position: relative;
+    width: 300px;
+    height: 150px;
+    margin-bottom: 20px;
+    border: 1px solid #ccc;
+  }
+  #bg-image {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
   #puzzle-piece {
     position: absolute;
     width: 50px;
     height: 50px;
+    background-image: url('https://i.imgur.com/3tXz7Wy.jpg'); /* Your CAPTCHA image */
     background-size: 300px 150px;
-    top: 0;
+    top: 50px;
     left: 0;
     cursor: pointer;
     box-shadow: 0 0 5px rgba(0,0,0,0.5);
-    border-radius: 5px;
+    transition: left 0.1s;
   }
-  #slider { width: 300px; margin-top: 10px; }
-  #message { font-weight: bold; margin-top: 10px; }
+  #slider {
+    width: 300px;
+  }
+  #message {
+    font-weight: bold;
+    margin-top: 10px;
+  }
 </style>
 </head>
 <body>
 
 <h2>Slide the puzzle piece to complete the image</h2>
+
 <div id="captcha-container">
-  <img id="bg-image" src="" alt="Background">
+  <img id="bg-image" src="https://i.imgur.com/3tXz7Wy.jpg" alt="Background">
   <div id="puzzle-piece"></div>
 </div>
+
 <input type="range" id="slider" min="0" max="250">
 <div id="message"></div>
 
@@ -37,39 +61,31 @@
 const puzzle = document.getElementById('puzzle-piece');
 const slider = document.getElementById('slider');
 const message = document.getElementById('message');
-const bgImage = document.getElementById('bg-image');
 
-// List of random images (you can add more URLs)
-const images = [
-  'https://picsum.photos/300/150?random=1',
-  'https://picsum.photos/300/150?random=2',
-  'https://picsum.photos/300/150?random=3'
-];
-
-// Pick a random image
-const selectedImage = images[Math.floor(Math.random() * images.length)];
-bgImage.src = selectedImage;
-puzzle.style.backgroundImage = `url('${selectedImage}')`;
-
-// Random target position
+// Random target position for puzzle piece (150px–250px)
 const target = Math.floor(Math.random() * 100) + 150;
 
-// Random vertical offset for piece
-const topOffset = Math.floor(Math.random() * 50) + 25;
-puzzle.style.top = `${topOffset}px`;
-puzzle.style.backgroundPosition = `-${target}px -${topOffset}px`;
+// Set piece background position to simulate a cutout
+puzzle.style.backgroundPosition = `-${target}px -50px`;
 
-// Slider interaction
+// Move the puzzle piece as slider moves
 slider.addEventListener('input', () => {
   puzzle.style.left = slider.value + 'px';
 });
 
+// Check puzzle position on release
 slider.addEventListener('change', () => {
   const current = parseInt(slider.value);
+
   if (Math.abs(current - target) < 10) {
     message.textContent = "✅ Verified!";
     message.style.color = "green";
     slider.disabled = true;
+
+    // Redirect to main app page
+    setTimeout(() => {
+      window.location.href = "app.html"; // Change this if your page has a different name
+    }, 500); // Short delay to show "Verified!" message
   } else {
     message.textContent = "❌ Try again!";
     message.style.color = "red";
@@ -81,4 +97,3 @@ slider.addEventListener('change', () => {
 
 </body>
 </html>
-
