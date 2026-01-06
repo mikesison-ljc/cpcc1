@@ -1,92 +1,52 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LJC CPCC System</title>
-
+<title>Decoy Page CAPTCHA</title>
 <style>
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: #111;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-}
-
-.box {
-  background: #1f1f1f;
-  padding: 30px;
-  border-radius: 10px;
-  text-align: center;
-  width: 320px;
-}
-
-input {
-  width: 100%;
-  padding: 10px;
-  font-size: 16px;
-  margin-top: 10px;
-}
-
-button {
-  margin-top: 15px;
-  width: 100%;
-  padding: 10px;
-  font-size: 16px;
-  background: #0b5f3c;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
+  body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; margin-top: 50px; }
+  #captcha-container { position: relative; width: 300px; height: 150px; margin-bottom: 20px; border: 1px solid #ccc; background-color: #f0f0f0; }
+  #puzzle-piece { position: absolute; width: 50px; height: 50px; background-color: #3498db; cursor: pointer; top: 50px; left: 0; }
+  #slider { width: 300px; }
+  #message { font-weight: bold; margin-top: 10px; }
 </style>
 </head>
-
 <body>
-<div class="box">
-  <h2>LJC CPCC System</h2>
 
-  <input type="password" id="pin" placeholder="PIN">
-
-  <div id="captchaText" style="margin-top:12px;"></div>
-  <input type="text" id="captcha" placeholder="Answer">
-
-  <button onclick="checkAccess()">Enter</button>
+<h2>Prove you're human</h2>
+<div id="captcha-container">
+  <div id="puzzle-piece"></div>
 </div>
+<input type="range" id="slider" min="0" max="250">
+<div id="message"></div>
 
 <script>
-const CORRECT_PIN = "1123";
+const puzzle = document.getElementById('puzzle-piece');
+const slider = document.getElementById('slider');
+const message = document.getElementById('message');
 
-let a = Math.floor(Math.random() * 9) + 1;
-let b = Math.floor(Math.random() * 9) + 1;
-const answer = a + b;
+// Random target position between 150 and 250px
+const target = Math.floor(Math.random() * 100) + 150;
 
-document.getElementById("captchaText").innerText =
-  `What is ${a} + ${b}?`;
+slider.addEventListener('input', () => {
+  puzzle.style.left = slider.value + 'px';
+});
 
-function checkAccess() {
-  const pin = document.getElementById("pin").value;
-  const cap = document.getElementById("captcha").value;
-
-  if (pin !== CORRECT_PIN) {
-    alert("Invalid PIN");
-    return;
+slider.addEventListener('change', () => {
+  const current = parseInt(slider.value);
+  if (Math.abs(current - target) < 10) {
+    message.textContent = "✅ Verified!";
+    message.style.color = "green";
+    slider.disabled = true;
+  } else {
+    message.textContent = "❌ Try again!";
+    message.style.color = "red";
+    slider.value = 0;
+    puzzle.style.left = '0px';
   }
-
-  if (Number(cap) !== answer) {
-    alert("CAPTCHA incorrect");
-    return;
-  }
-
-  // Optional: remember session
-  sessionStorage.setItem("cpcc_access", "1");
-
-  window.location.href = "app.html";
-}
+});
 </script>
+
 </body>
 </html>
