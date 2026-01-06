@@ -1,134 +1,170 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>LJC CPCC System</title>
+<title>LJC CPCC System – Verification</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-body{
-  margin:0;
-  background:#0e0e0e;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  height:100vh;
-  color:white;
-  font-family:Arial;
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #111;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
 }
-.box{
-  background:#1a1a1a;
-  padding:30px;
-  border-radius:10px;
-  width:320px;
-  text-align:center;
+
+.box {
+  background: #1f1f1f;
+  padding: 24px;
+  border-radius: 10px;
+  width: 340px;
+  text-align: center;
 }
-input,button{
-  width:100%;
-  padding:10px;
-  margin-top:10px;
-  font-size:16px;
+
+#captcha-container {
+  position: relative;
+  width: 300px;
+  height: 150px;
+  margin: 15px auto;
+  overflow: hidden;
+  border-radius: 6px;
 }
-button{
-  background:#0b5f3c;
-  border:none;
-  color:white;
-  border-radius:5px;
+
+#bg {
+  width: 100%;
+  height: 100%;
 }
-.locked{
-  opacity:.4;
-  pointer-events:none;
+
+#piece {
+  position: absolute;
+  top: 50px;
+  left: 0;
+  width: 50px;
+  height: 50px;
+  background-size: 300px 150px;
+  box-shadow: 0 0 6px rgba(0,0,0,.7);
+}
+
+input[type=range] {
+  width: 300px;
+}
+
+#msg {
+  margin-top: 10px;
+  font-weight: bold;
 }
 </style>
 </head>
 
 <body>
-<div class="box" id="box">
-<h2>CPCC Access</h2>
-<input type="password" id="pin" placeholder="PIN">
-<div id="captchaText"></div>
-<input type="text" id="captcha" placeholder="Answer">
-<button id="btn" onclick="check()">Enter</button>
-<div id="msg"></div>
+
+<div class="box">
+  <h3>Human Verification</h3>
+  <p>Slide the puzzle to complete the image</p>
+
+  <div id="captcha-container">
+    <img id="bg">
+    <div id="piece"></div>
+  </div>
+
+  <input type="range" id="slider" min="0" max="250" value="0">
+  <div id="msg"></div>
 </div>
 
 <script>
-const PIN_HASH="03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4"; // 1123
-const LOCK_TIME=30000;
-const MAX_FAILS=3;
+/* ================= SECURITY STATE ================= */
 
-const token=crypto.randomUUID();
-sessionStorage.setItem("session_token",token);
-
-let a=Math.floor(Math.random()*9)+1;
-let b=Math.floor(Math.random()*9)+1;
-const ans=a+b;
-document.getElementById("captchaText").innerText=`${a} + ${b} = ?`;
-
-let startTime=Date.now();
-
-function sha256(str){
-  return crypto.subtle.digest("SHA-256",new TextEncoder().encode(str))
-    .then(buf=>Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join(""));
+if (sessionStorage.getItem("cpcc_token")) {
+  // Already verified → go straight to app
+  location.replace("app.html");
 }
 
-function getFails(){ return Number(sessionStorage.getItem("fails")||0); }
-function setFails(v){ sessionStorage.setItem("fails",v); }
+const startTime = Date.now();
+let moved = false;
 
-function lock(){
-  sessionStorage.setItem("locked",Date.now()+LOCK_TIME);
-  document.getElementById("box").classList.add("locked");
-  document.getElementById("msg").innerText="⛔ Locked 30 seconds";
-  setTimeout(unlock,LOCK_TIME);
+let attempts = Number(sessionStorage.getItem("cap_attempts") || 0);
+if (attempts >= 3) {
+  document.getElementById("msg").innerText =
+    "Too many attempts. Reload page to try again.";
+  document.getElementById("slider").disabled = true;
+  throw "LOCKED";
 }
 
-function unlock(){
-  sessionStorage.removeItem("locked");
-  document.getElementById("box").classList.remove("locked");
-  document.getElementById("msg").innerText="";
-  setFails(0);
-}
+/* ================= IMAGE SETUP ================= */
 
-if(sessionStorage.getItem("locked")){
-  if(Date.now()<sessionStorage.getItem("locked")) lock();
-  else unlock();
-}
+const seed = Math.floor(Math.random() * 9999);
+const imgURL = `https://picsum.photos/300/150?random=${seed}`;
 
-async function check(){
-  if(sessionStorage.getItem("used")) return;
+const bg = document.getElementById("bg");
+const piece = document.getElementById("piece");
+const slider = document.getElementById("slider");
+const msg = document.getElementById("msg");
 
-  if(Date.now()-startTime<1200){
-    alert("Bot-like speed");
+bg.src = imgURL;
+piece.style.backgroundImage = `url(${imgURL})`;
+
+/* ================= PUZZLE LOGIC ================= */
+
+const target = Math.floor(Math.random() * 120) + 100;
+piece.style.backgroundPosition = `-${target}px -50px`;
+
+slider.addEventListener("input", () => {
+  moved = true;
+  piece.style.left = slider.value + "px";
+});
+
+slider.addEventListener("change", () => {
+  attempts++;
+  sessionStorage.setItem("cap_attempts", attempts);
+
+  const elapsed = Date.now() - startTime;
+  const current = Number(slider.value);
+
+  // Too fast = bot-like
+  if (elapsed < 1200) {
+    msg.innerText = "Suspicious activity detected";
+    msg.style.color = "red";
+    slider.disabled = true;
     return;
   }
 
-  const pin = document.getElementById("pin").value.trim();
-  const cap=document.getElementById("captcha").value;
-
-  const hash=await sha256(pin);
-
-  if(hash!==PIN_HASH || Number(cap)!==ans){
-    setFails(getFails()+1);
-    if(getFails()>=MAX_FAILS) lock();
-    alert("Invalid");
+  if (!moved) {
+    msg.innerText = "Invalid interaction";
+    msg.style.color = "red";
     return;
   }
 
-  sessionStorage.setItem("used","1");
-  sessionStorage.setItem("cpcc_access","1");
-  sessionStorage.setItem("timestamp",Date.now());
+  if (Math.abs(current - target) <= 8) {
+    msg.innerText = "✅ Verified";
+    msg.style.color = "lime";
 
-  window.location.replace("app.html");
-}
+    // Issue secure session token
+    sessionStorage.setItem("cpcc_token", crypto.randomUUID());
+    sessionStorage.removeItem("cap_attempts");
 
-// Decoy noise
-setInterval(()=>console.log(Math.random()),500);
+    setTimeout(() => {
+      location.replace("app.html");
+    }, 500);
 
-// Devtools delay
-document.addEventListener("contextmenu",e=>e.preventDefault());
-document.addEventListener("keydown",e=>{
-  if(e.key=="F12"||e.ctrlKey&&e.shiftKey) setTimeout(()=>{},3000);
+  } else {
+    msg.innerText = "❌ Try again";
+    msg.style.color = "red";
+    slider.value = 0;
+    piece.style.left = "0px";
+  }
+});
+
+/* ================= BASIC DETERRENTS ================= */
+
+document.addEventListener("contextmenu", e => e.preventDefault());
+document.addEventListener("keydown", e => {
+  if (e.key === "F12") location.reload();
 });
 </script>
+
 </body>
 </html>
-
