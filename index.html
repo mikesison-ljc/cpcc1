@@ -56,6 +56,35 @@
 <div id="message"></div>
 
 <script>
+// At the top of your <script> block
+if (localStorage.getItem('captchaVerified') === 'true') {
+  // Already solved, redirect immediately
+  window.location.href = 'app.html';
+}
+
+slider.addEventListener('change', () => {
+  if (verified) return;
+  const current = parseInt(slider.value);
+  if (Math.abs(current - target) < 10) {
+    message.textContent = "✅ Verified!";
+    message.style.color = "green";
+    slider.disabled = true;
+    verified = true;
+
+    // Save verification flag
+    localStorage.setItem('captchaVerified', 'true');
+
+    setTimeout(() => {
+      window.location.href = "app.html"; // Redirect to your main app
+    }, 500);
+  } else {
+    message.textContent = "❌ Try again!";
+    message.style.color = "red";
+    slider.value = 0;
+    puzzle.style.left = '0px';
+  }
+});
+ 
 const puzzle = document.getElementById('puzzle-piece');
 const slider = document.getElementById('slider');
 const message = document.getElementById('message');
@@ -99,3 +128,4 @@ slider.addEventListener('change', () => {
 
 </body>
 </html>
+
