@@ -28,7 +28,7 @@
     position: absolute;
     width: 50px;
     height: 50px;
-    background-image: url('https://i.imgur.com/3tXz7Wy.jpg'); /* Your CAPTCHA image */
+    background-image: url('https://i.imgur.com/3tXz7Wy.jpg'); /* Keep your working image */
     background-size: 300px 150px;
     top: 50px;
     left: 0;
@@ -68,24 +68,28 @@ const target = Math.floor(Math.random() * 100) + 150;
 // Set piece background position to simulate a cutout
 puzzle.style.backgroundPosition = `-${target}px -50px`;
 
-// Move the puzzle piece as slider moves
+// Prevent multiple redirects
+let verified = false;
+
 slider.addEventListener('input', () => {
   puzzle.style.left = slider.value + 'px';
 });
 
-// Check puzzle position on release
 slider.addEventListener('change', () => {
+  if (verified) return; // Already solved, do nothing
+
   const current = parseInt(slider.value);
 
   if (Math.abs(current - target) < 10) {
     message.textContent = "✅ Verified!";
     message.style.color = "green";
     slider.disabled = true;
+    verified = true;
 
     // Redirect to main app page
     setTimeout(() => {
-      window.location.href = "app.html"; // Change this if your page has a different name
-    }, 500); // Short delay to show "Verified!" message
+      window.location.href = "app.html"; // Make sure app.html exists
+    }, 500);
   } else {
     message.textContent = "❌ Try again!";
     message.style.color = "red";
