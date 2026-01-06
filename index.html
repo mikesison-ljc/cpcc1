@@ -3,23 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Image Slider CAPTCHA</title>
+<title>Improved Slider CAPTCHA</title>
 <style>
   body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; margin-top: 50px; }
-  #captcha-container { position: relative; width: 300px; height: 150px; margin-bottom: 20px; }
+  #captcha-container { position: relative; width: 300px; height: 150px; margin-bottom: 20px; border: 1px solid #ccc; }
   #bg-image { width: 100%; height: 100%; display: block; }
   #puzzle-piece {
     position: absolute;
     width: 50px;
     height: 50px;
-    background-image: url('https://i.imgur.com/3tXz7Wy.jpg'); /* Example image */
     background-size: 300px 150px;
-    top: 50px;
+    top: 0;
     left: 0;
     cursor: pointer;
     box-shadow: 0 0 5px rgba(0,0,0,0.5);
+    border-radius: 5px;
   }
-  #slider { width: 300px; }
+  #slider { width: 300px; margin-top: 10px; }
   #message { font-weight: bold; margin-top: 10px; }
 </style>
 </head>
@@ -27,7 +27,7 @@
 
 <h2>Slide the puzzle piece to complete the image</h2>
 <div id="captcha-container">
-  <img id="bg-image" src="https://i.imgur.com/3tXz7Wy.jpg" alt="Background">
+  <img id="bg-image" src="" alt="Background">
   <div id="puzzle-piece"></div>
 </div>
 <input type="range" id="slider" min="0" max="250">
@@ -37,13 +37,29 @@
 const puzzle = document.getElementById('puzzle-piece');
 const slider = document.getElementById('slider');
 const message = document.getElementById('message');
+const bgImage = document.getElementById('bg-image');
 
-// Random target position for puzzle piece
+// List of random images (you can add more URLs)
+const images = [
+  'https://i.imgur.com/3tXz7Wy.jpg',
+  'https://i.imgur.com/8Qq6xZt.jpg',
+  'https://i.imgur.com/0Z7JkHx.jpg'
+];
+
+// Pick a random image
+const selectedImage = images[Math.floor(Math.random() * images.length)];
+bgImage.src = selectedImage;
+puzzle.style.backgroundImage = `url('${selectedImage}')`;
+
+// Random target position
 const target = Math.floor(Math.random() * 100) + 150;
 
-// Set piece background position to simulate cutout
-puzzle.style.backgroundPosition = `-${target}px -50px`;
+// Random vertical offset for piece
+const topOffset = Math.floor(Math.random() * 50) + 25;
+puzzle.style.top = `${topOffset}px`;
+puzzle.style.backgroundPosition = `-${target}px -${topOffset}px`;
 
+// Slider interaction
 slider.addEventListener('input', () => {
   puzzle.style.left = slider.value + 'px';
 });
