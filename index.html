@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Image Slider CAPTCHA</title>
+<title>Puzzle CAPTCHA</title>
 <style>
   body {
     font-family: sans-serif;
@@ -28,8 +28,6 @@
     position: absolute;
     width: 50px;
     height: 50px;
-    background-image: url('https://i.imgur.com/3tXz7Wy.jpg'); /* Keep your working image */
-    background-size: 300px 150px;
     top: 50px;
     left: 0;
     cursor: pointer;
@@ -50,7 +48,7 @@
 <h2>Slide the puzzle piece to complete the image</h2>
 
 <div id="captcha-container">
-  <img id="bg-image" src="https://i.imgur.com/3tXz7Wy.jpg" alt="Background">
+  <img id="bg-image" alt="Background">
   <div id="puzzle-piece"></div>
 </div>
 
@@ -61,14 +59,18 @@
 const puzzle = document.getElementById('puzzle-piece');
 const slider = document.getElementById('slider');
 const message = document.getElementById('message');
+const bgImage = document.getElementById('bg-image');
 
-// Random target position for puzzle piece (150px–250px)
+// Get a random Picsum image
+const imgId = Math.floor(Math.random() * 1000); // Random ID for variety
+bgImage.src = `https://picsum.photos/id/${imgId}/300/150`;
+puzzle.style.backgroundImage = `url(https://picsum.photos/id/${imgId}/300/150)`;
+puzzle.style.backgroundSize = "300px 150px";
+
+// Random target position for puzzle piece
 const target = Math.floor(Math.random() * 100) + 150;
-
-// Set piece background position to simulate a cutout
 puzzle.style.backgroundPosition = `-${target}px -50px`;
 
-// Prevent multiple redirects
 let verified = false;
 
 slider.addEventListener('input', () => {
@@ -76,19 +78,15 @@ slider.addEventListener('input', () => {
 });
 
 slider.addEventListener('change', () => {
-  if (verified) return; // Already solved, do nothing
-
+  if (verified) return;
   const current = parseInt(slider.value);
-
   if (Math.abs(current - target) < 10) {
     message.textContent = "✅ Verified!";
     message.style.color = "green";
     slider.disabled = true;
     verified = true;
-
-    // Redirect to main app page
     setTimeout(() => {
-      window.location.href = "app.html"; // Make sure app.html exists
+      window.location.href = "app.html"; // Redirect to your main app
     }, 500);
   } else {
     message.textContent = "❌ Try again!";
