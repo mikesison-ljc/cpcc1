@@ -1,100 +1,92 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>Security Check</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
+<title>LJC CPCC System</title>
 
 <style>
-body{
-  font-family:Arial;
-  background:#111;
-  color:white;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  height:100vh;
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #111;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
 }
-#captcha-container{
-  position:relative;
-  width:300px;
-  height:150px;
-  border:2px solid #555;
-  margin-bottom:20px;
-}
-#bg-image{ width:100%; height:100%; }
-#puzzle{
-  position:absolute;
-  width:50px;
-  height:50px;
-  top:50px;
-  left:0;
-  background-size:300px 150px;
-  box-shadow:0 0 8px black;
-}
-#slider{ width:300px; }
-#message{ margin-top:15px; font-weight:bold; }
-</style>
 
-<script>
-/* 🔐 Prevent returning after verification */
-if(sessionStorage.getItem("captchaOK") === "1"){
-  location.replace("app.html");
+.box {
+  background: #1f1f1f;
+  padding: 30px;
+  border-radius: 10px;
+  text-align: center;
+  width: 320px;
 }
-</script>
+
+input {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  margin-top: 10px;
+}
+
+button {
+  margin-top: 15px;
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  background: #0b5f3c;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+</style>
 </head>
 
 <body>
+<div class="box">
+  <h2>LJC CPCC System</h2>
 
-<h2>Slide to Verify</h2>
+  <input type="password" id="pin" placeholder="PIN">
 
-<div id="captcha-container">
-  <img id="bg-image">
-  <div id="puzzle"></div>
+  <div id="captchaText" style="margin-top:12px;"></div>
+  <input type="text" id="captcha" placeholder="Answer">
+
+  <button onclick="checkAccess()">Enter</button>
 </div>
 
-<input type="range" id="slider" min="0" max="250" value="0">
-<div id="message"></div>
-
 <script>
-const slider = document.getElementById("slider");
-const puzzle = document.getElementById("puzzle");
-const msg = document.getElementById("message");
+const CORRECT_PIN = "1123";
 
-const id = Math.floor(Math.random()*800);
-const img = `https://picsum.photos/id/${id}/300/150`;
+let a = Math.floor(Math.random() * 9) + 1;
+let b = Math.floor(Math.random() * 9) + 1;
+const answer = a + b;
 
-document.getElementById("bg-image").src = img;
-puzzle.style.backgroundImage = `url(${img})`;
+document.getElementById("captchaText").innerText =
+  `What is ${a} + ${b}?`;
 
-const target = Math.floor(Math.random()*80)+150;
-puzzle.style.backgroundPosition = `-${target}px -50px`;
+function checkAccess() {
+  const pin = document.getElementById("pin").value;
+  const cap = document.getElementById("captcha").value;
 
-slider.oninput = ()=> puzzle.style.left = slider.value+"px";
-
-slider.onchange = ()=>{
-  const v = parseInt(slider.value);
-  if(Math.abs(v - target) < 10){
-    msg.textContent="✔ Verified";
-    msg.style.color="lime";
-    slider.disabled=true;
-
-    sessionStorage.setItem("captchaOK","1");
-
-    setTimeout(()=>{
-      location.replace("app.html");
-    },500);
-  } else {
-    msg.textContent="❌ Try again";
-    msg.style.color="red";
-    slider.value=0;
-    puzzle.style.left="0px";
+  if (pin !== CORRECT_PIN) {
+    alert("Invalid PIN");
+    return;
   }
+
+  if (Number(cap) !== answer) {
+    alert("CAPTCHA incorrect");
+    return;
+  }
+
+  // Optional: remember session
+  sessionStorage.setItem("cpcc_access", "1");
+
+  window.location.href = "app.html";
 }
 </script>
-
 </body>
 </html>
