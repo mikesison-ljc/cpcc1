@@ -3,67 +3,63 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Puzzle CAPTCHA</title>
+<title>Image Slider CAPTCHA</title>
 <style>
-  body {
-    font-family: sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-top: 50px;
-  }
-  #captcha-container {
-    position: relative;
-    width: 300px;
-    height: 150px;
-    margin-bottom: 20px;
-    border: 1px solid #ccc;
-  }
-  #bg-image {
-    width: 100%;
-    height: 100%;
-    display: block;
-  }
+  body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; margin-top: 50px; }
+  #captcha-container { position: relative; width: 300px; height: 150px; margin-bottom: 20px; }
+  #bg-image { width: 100%; height: 100%; display: block; }
   #puzzle-piece {
     position: absolute;
     width: 50px;
     height: 50px;
+    background-size: 300px 150px;
     top: 50px;
     left: 0;
     cursor: pointer;
     box-shadow: 0 0 5px rgba(0,0,0,0.5);
-    transition: left 0.1s;
   }
-  #slider {
-    width: 300px;
-  }
-  #message {
-    font-weight: bold;
-    margin-top: 10px;
-  }
+  #slider { width: 300px; }
+  #message { font-weight: bold; margin-top: 10px; }
 </style>
 </head>
 <body>
 
 <h2>Slide the puzzle piece to complete the image</h2>
-
 <div id="captcha-container">
-  <img id="bg-image" alt="Background">
+  <img id="bg-image" src="" alt="Background">
   <div id="puzzle-piece"></div>
 </div>
-
 <input type="range" id="slider" min="0" max="250">
 <div id="message"></div>
 
 <script>
-// At the top of your <script> block
+const puzzle = document.getElementById('puzzle-piece');
+const slider = document.getElementById('slider');
+const message = document.getElementById('message');
+let verified = false;
+
+// Check if user already solved CAPTCHA
 if (localStorage.getItem('captchaVerified') === 'true') {
-  // Already solved, redirect immediately
   window.location.href = 'app.html';
 }
 
+// Load a random Picsum image
+const randomId = Math.floor(Math.random() * 1000);
+const bgImageUrl = `https://picsum.photos/id/${randomId}/300/150`;
+document.getElementById('bg-image').src = bgImageUrl;
+puzzle.style.backgroundImage = `url(${bgImageUrl})`;
+
+// Random target position for puzzle piece
+const target = Math.floor(Math.random() * 100) + 150;
+puzzle.style.backgroundPosition = `-${target}px -50px`;
+
+slider.addEventListener('input', () => {
+  puzzle.style.left = slider.value + 'px';
+});
+
 slider.addEventListener('change', () => {
   if (verified) return;
+
   const current = parseInt(slider.value);
   if (Math.abs(current - target) < 10) {
     message.textContent = "✅ Verified!";
@@ -74,48 +70,9 @@ slider.addEventListener('change', () => {
     // Save verification flag
     localStorage.setItem('captchaVerified', 'true');
 
+    // Redirect to main app
     setTimeout(() => {
-      window.location.href = "app.html"; // Redirect to your main app
-    }, 500);
-  } else {
-    message.textContent = "❌ Try again!";
-    message.style.color = "red";
-    slider.value = 0;
-    puzzle.style.left = '0px';
-  }
-});
- 
-const puzzle = document.getElementById('puzzle-piece');
-const slider = document.getElementById('slider');
-const message = document.getElementById('message');
-const bgImage = document.getElementById('bg-image');
-
-// Get a random Picsum image
-const imgId = Math.floor(Math.random() * 1000); // Random ID for variety
-bgImage.src = `https://picsum.photos/id/${imgId}/300/150`;
-puzzle.style.backgroundImage = `url(https://picsum.photos/id/${imgId}/300/150)`;
-puzzle.style.backgroundSize = "300px 150px";
-
-// Random target position for puzzle piece
-const target = Math.floor(Math.random() * 100) + 150;
-puzzle.style.backgroundPosition = `-${target}px -50px`;
-
-let verified = false;
-
-slider.addEventListener('input', () => {
-  puzzle.style.left = slider.value + 'px';
-});
-
-slider.addEventListener('change', () => {
-  if (verified) return;
-  const current = parseInt(slider.value);
-  if (Math.abs(current - target) < 10) {
-    message.textContent = "✅ Verified!";
-    message.style.color = "green";
-    slider.disabled = true;
-    verified = true;
-    setTimeout(() => {
-      window.location.href = "app.html"; // Redirect to your main app
+      window.location.href = "app.html";
     }, 500);
   } else {
     message.textContent = "❌ Try again!";
@@ -128,4 +85,3 @@ slider.addEventListener('change', () => {
 
 </body>
 </html>
-
