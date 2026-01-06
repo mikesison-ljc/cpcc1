@@ -1177,7 +1177,11 @@ cpcc.addEventListener("input", ()=>{
   <button onclick="closePad()">OK</button>
 </div>
 
-
+<script>
+document.addEventListener("contextmenu", function (e) {
+  e.preventDefault();
+});
+</script>
 
 
 </body>
