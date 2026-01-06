@@ -1177,6 +1177,27 @@ cpcc.addEventListener("input", ()=>{
   <button onclick="closePad()">OK</button>
 </div>
 
+<script>
+/* Disable right click */
+document.addEventListener("contextmenu", function (e) {
+  e.preventDefault();
+});
+
+/* Disable common dev shortcuts */
+document.addEventListener("keydown", function (e) {
+  if (
+    e.key === "F12" ||
+    (e.ctrlKey && e.shiftKey && ["I", "J", "C"].includes(e.key)) ||
+    (e.ctrlKey && e.key === "U")
+  ) {
+    e.preventDefault();
+  }
+});
+
+/* Disable long-press on mobile */
+document.addEventListener("touchstart", function () {}, { passive: false });
+</script>
+  
 
 
 </body>
