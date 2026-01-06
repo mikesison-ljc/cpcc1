@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>LJC CPCC System v3.7.4</title>
+
+<!-- Inter Font -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+body {
+  margin:0;
+  font-family:'Inter', Arial, sans-serif;
+  height:100vh;
+  display:flex;
+  flex-direction:column;
+  background:#eee;
+}
+
+input, select, button {
+  font-family:'Inter', Arial, sans-serif;
+  font-weight:500;
+  padding:8px;
+  font-size:14px;
+}
+
+
+header {
+  position:fixed;
+  top:0; left:0; right:0;
+  height:70px;
+  background:#0b5f3c;
+  color:white;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  font-size:22px;
+  font-weight:600;
+  z-index:1000;
+  box-shadow:0 2px 6px rgba(0,0,0,0.25);
+}
+
+header img { height:67px; }
+
+#topBar {
+  position:fixed;
+  top:70px; left:0; right:0;
+  display:flex;
+  gap:10px;
+  padding:10px;
+  background:#ddd;
+  z-index:900;
+  box-shadow:0 2px 4px rgba(0,0,0,0.15);
+}
+
+
+#main { flex:1; display:flex; margin-top:130px; }
+
+#left {
+  width:40%;
+  background:#111;
+  color:white;
+  padding:10px;
+  display:flex;
+  flex-direction:column;
+}
+
+#outletBox{
+  padding:8px 14px;
+  background:#0b5f3c;
+  color:white;
+  font-weight:700;
+  border-radius:6px;
+  min-width:160px;
+  text-align:center;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.2);
+}
+
+
+#orderList { flex:1; overflow-y:auto; }
+
+.order-item {
+  display:flex;
+  align-items:center;
+  padding:6px;
+  border-bottom:1px solid #333;
+}
+
+.item-name { flex:1; }
+
+.qty-controls {
+  display:flex;
+  align-items:center;
+  gap:4px;
+  min-width:90px;
+  justify-content:center;
+  margin-right:8px;
+}
+
+.qty-number { width:24px; text-align:center; }
+
+.qty-btn { padding:3px 8px; }
+.del-btn { background:red; color:white; border:none; padding:3px 6px; }
+
+#total { padding:10px; border-top:2px solid #555; }
+
+#actions button {
+  padding:12px;
+  font-size:16px;
+  margin-top:5px;
+}
+
+#right {
+  width:60%;
+  display:flex;
+  flex-direction:column;
+}
+
+
+
+#categories {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 6px;
+  background: #333;
+  padding: 6px;
+}
+
+
+.cat-btn {
+  padding: 4px;
+  background: #555;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  text-align: center;
+  white-space: normal;
+  font-size:12px;
+}
+
+#backBtn {
+  display: none;          /* hidden initially */
+  padding:10px 15px;
+  font-size:16px;
+  background:#0b5f3c;
+  color:white;
+  border:none;
+  border-radius:6px;
+  margin-bottom:10px;
+  cursor:pointer;
+}
+
+
+
+#menuGrid {
+  flex:1;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+  padding:10px;
+}
+
+.menu-btn {
+  padding: 12px;        /* smaller padding to fit more text */
+  font-size: 14px;      /* reduce font size */
+  border: none;
+  border-radius: 6px;   /* slightly smaller radius */
+  text-align: center;
+  white-space: normal;  /* allow text to wrap into multiple lines */
+  word-wrap: break-word;
+}
+
+
+.pad{
+  position:fixed;
+  bottom:20px;
+  left:50%;
+  transform:translateX(-50%);
+  background:#222;
+  color:white;
+  padding:10px;
+  border-radius:10px;
+  display:none;
+  z-index:5000;
+  box-shadow:0 0 20px rgba(0,0,0,.6);
+}
+
+.pad-header{
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:8px;
+}
+
+.pad-grid{
+  display:grid;
+  grid-template-columns:repeat(3,60px);
+  gap:8px;
+}
+
+.pad button{
+  padding:14px;
+  font-size:18px;
+  border:none;
+  background:#555;
+  color:white;
+  border-radius:6px;
+}
+
+
+.kbd-grid{
+  display:grid;
+  grid-template-columns:repeat(10,1fr);
+  gap:6px;
+}
+
+.kbd-grid button{
+  padding:14px;
+  font-size:18px;
+  background:#444;
+  color:white;
+  border:none;
+  border-radius:6px;
+}
+
+#historyPane th,
+#historyPane td {
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+  font-size: 14px;
+}
+
+
+
+
+
+#right {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+
+#historyContainer {
+  display:none;
+  width:100%;
+  padding:10px;
+  box-sizing:border-box;
+}
+
+body.history-open #historyContainer {
+  display:block;
+}
+
+body.history-open #topBar {
+  display:none;
+}
+
+body.history-open #main {
+  display:none;
+}
+
+#historyPane {
+  display:flex !important;
+  height: calc(100vh - 90px);
+}
+
+/* Force History to be full-page vertical layout */
+#historyContainer {
+    width: 100%;
+    display: none;
+}
+
+body.history-open #historyContainer {
+    display: block;
+}
+
+/* Reset any inherited POS flex layout */
+#historyPane {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    height: calc(100vh - 90px);
+    background: #f5f5f5;
+    box-sizing: border-box;
+}
+
+/* Prevent filters from becoming a sidebar */
+#historyPane > div {
+    width: 100% !important;
+}
+
+
+body.history-open #historyContainer {
+    display: block;
+    margin-top: 70px;   /* push below fixed header */
+}
+
+#historyPane {
+    height: calc(100vh - 70px) !important;
+}
+
+
+.history-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.history-table th,
+.history-table td {
+  padding: 8px 10px;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.history-table col.date      { width: 90px; }
+.history-table col.cpccref   { width: 110px; }
+.history-table col.customer { width: 220px; }
+.history-table col.total    { width: 110px; }
+.history-table col.cpcc     { width: 90px; }
+.history-table col.cash     { width: 90px; }
+.history-table col.receipt  { width: 140px; }
+.history-table col.remarks { width: 220px; }
+
+
+
+
+
+</style>
+</head>
+
+<body>
+
+
+<div id="pinModal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#111a;display:flex;align-items:center;justify-content:center;z-index:9999;">
+  <div style="background:white;padding:20px;border-radius:8px;text-align:center;">
+    <h2>Enter PIN</h2>
+    <input type="password" id="pinInput">
+    <button onclick="checkPin()">Submit</button>
+  </div>
+</div>
+
+<header>
+  <img src="https://ljcrestaurant.com/wp-content/uploads/2023/08/LJC_-Logo-in-Green-Box.jpg">
+  <span>LJC CPCC System</span>
+</header>
+
+<div id="historyContainer">
+  <div id="historyPane">
+
+    <!-- Header -->
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <h3>CPCC Transaction History</h3>
+      <button onclick="closeHistory()" style="font-size:18px;">✕</button>
+    </div>
+
+    <!-- Filters -->
+    <div style="display:flex; gap:8px; margin-bottom:10px;">
+      <input type="text" value="ABE Trinoma" disabled style="width:140px;">
+      <input type="date" id="historyFrom">
+      <input type="date" id="historyTo">
+      <button onclick="fetchHistory()">Fetch</button>
+    </div>
+
+    <!-- Results -->
+    <div style="flex:1; display:flex; flex-direction:column; border:1px solid #ccc; background:white;">
+      <table class="history-table" style="border-collapse:collapse;">
+        <colgroup>
+          <col class="date">
+          <col class="cpccref">
+          <col class="customer">
+          <col class="total">
+          <col class="cpcc">
+          <col class="cash">
+          <col class="receipt">
+          <col class="remarks">
+        </colgroup>
+        <thead style="background:#ddd;">
+          <tr>
+            <th>Date</th>
+            <th>CPCC Ref #</th>
+            <th>Customer</th>
+            <th>Line Total</th>
+            <th>CPCC</th>
+            <th>Cash</th>
+            <th>Receipt #</th>
+            <th>Remarks</th>
+          </tr>
+        </thead>
+      </table>
+
+      <div style="flex:1; overflow-y:auto;">
+        <table class="history-table" style="border-collapse:collapse;">
+          <colgroup>
+            <col class="date">
+            <col class="cpccref">
+            <col class="customer">
+            <col class="total">
+            <col class="cpcc">
+            <col class="cash">
+            <col class="receipt">
+            <col class="remarks">
+          </colgroup>
+          <tbody id="historyBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<div id="topBar" class="cpcc-tabs">
+  <div id="outletBox">ABE Trinoma</div>
+
+
+<select id="customerSelect" onchange="handleCustomer()">
+  <option value="">Loading CPCC users…</option>
+</select>
+
+
+  <input id="customerOther" placeholder="Enter Customer Name" style="display:none">
+  <input id="cpcc" placeholder="CPCC Ref #" inputmode="numeric">
+  <input id="date" type="date">
+  <input id="remarks" placeholder="Remarks">
+</div>
+
+<div id="main">
+  <div id="left">
+    <h3>ORDER</h3>
+    <div id="orderList"></div>
+    <div id="total"></div>
+
+    <div id="excessReceipt" style="display:none; margin-top:10px; padding:10px; background:#fff4e5; border:1px solid #ffa500; border-radius:6px;">
+      <label for="receiptNumber" style="color:red;"><b>Excess Payment Receipt #:</b></label><br>
+      <input type="text" id="receiptNumber" placeholder="Enter receipt number" style="padding:6px; width:100%; margin-top:4px;">
+      <small style="color:#555;">Required if transaction exceeds CPCC limit</small>
+    </div>
+
+
+
+    <div id="actions">
+      <button onclick="confirmOrder()">Confirm</button>
+      <button onclick="cancelOrder()">Cancel</button>
+      <button onclick="openHistory()">History</button>
+    </div>
+  </div>
+
+  <div id="right">
+    <div id="categories"></div>
+    <button id="backBtn" onclick="showCategories()">← Back</button>
+    <div id="menuGrid"></div>
+  </div>
+</div>
+
+<script>
+
+/* ===== TERMINAL LOCK ===== */
+
+const TERMINAL_ID = "ABE_TRINOMA_POS01";
+const LICENSE_URL = "https://script.google.com/macros/s/AKfycbxyVcBUftZ4hMHLCdFdq4wAsyX6a-A94MsexqO1ivAJVDxPqJZ6RQrgJ-3VKCE6czRL/exec";
+
+async function checkTerminal(){
+  try{
+    const res = await fetch(LICENSE_URL);
+    const data = await res.json();
+
+    const today = new Date();
+
+    const row = data.find(r =>
+      r.outlet === FIXED_OUTLET &&
+      r.terminal === TERMINAL_ID &&
+      r.active === "Y" &&
+      (!r.expiry || new Date(r.expiry) >= today)
+    );
+
+    if(!row){
+      document.body.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:center;
+                    height:100vh;background:#111;color:white;
+                    font-size:28px;text-align:center;">
+          TERMINAL DISABLED<br><br>
+          Contact Head Office
+        </div>`;
+      throw "TERMINAL_DISABLED";
+    }
+  }catch(e){
+    document.body.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:center;
+                  height:100vh;background:#111;color:white;
+                  font-size:28px;text-align:center;">
+        LICENSE SERVER UNREACHABLE
+      </div>`;
+    throw e;
+  }
+}
+
+
+
+const FIXED_OUTLET = "ABE Trinoma";
+let CUSTOMER_LIMITS = {};
+
+
+/* ===== DATA ===== */
+
+
+let cart = {};
+let liveCPCCUsed = null;
+
+let cpccFresh = false;
+
+
+/* ===== HELPERS ===== */
+function getMonthKey(d){
+  let x = new Date(d);
+  return x.getFullYear() + "-" + (x.getMonth()+1);
+}
+
+function getCustomerName(){
+  return customerSelect.value === "Others"
+    ? customerOther.value.trim()
+    : customerSelect.value;
+}
+
+/* ===== CPCC UPDATE ===== */
+async function updateCPCC() {
+  const cust = getCustomerName();
+  if (!cust || !date.value) {
+    alert("Select customer & date");
+    return;
+  }
+
+  total.innerHTML = "Updating CPCC...";
+
+  let res;
+  try {
+    res = await fetch(
+      "https://script.google.com/macros/s/AKfycbwDrI8tBgexxW03K4iQjGZqMK-mZ96PWaObev6TfzWgEDGL7BTEcaU57dpJiUqZxJMv/exec"
+    );
+  } catch {
+    alert("Failed to reach CPCC server.");
+    return;
+  }
+
+  const data = await res.json();
+  
+
+  const month = getMonthKey(date.value);
+  liveCPCCUsed = 0;
+
+  data.forEach(r => {
+    const rowCustomer = r.customer;       
+    const rowDate     = r.date;
+    const rowTotal    = Number(r.cpccPart ?? r.lineTotal ?? 0);
+
+    if (rowCustomer === cust && getMonthKey(rowDate) === month) {
+      liveCPCCUsed += rowTotal;
+    }
+  });
+
+  render();
+  cpccFresh = true;
+
+
+}
+
+
+async function fetchCPCCUsers(){
+  try {
+    const res = await fetch(
+      "https://script.google.com/macros/s/AKfycbw1JlHXutmB37LrjlE-hpfafrpoGqH2GNr6jj77qb_f3kZfOV5YM04-dLmcKAq_Kb7qfQ/exec"
+    );
+
+    const data = await res.json();
+
+    if (!data.users || !Array.isArray(data.users)) {
+      throw new Error("Invalid CPCC user payload");
+    }
+
+    CUSTOMER_LIMITS = {};
+    customerSelect.innerHTML =
+      `<option value="">Select Customer</option>`;
+
+    data.users.forEach(u => {
+      CUSTOMER_LIMITS[u.name] = Number(u.limit) || 0;
+
+      customerSelect.innerHTML +=
+        `<option value="${u.name}">${u.name}</option>`;
+    });
+
+    customerSelect.innerHTML +=
+      `<option value="Others">Others</option>`;
+
+  } catch(e){
+    console.error("CPCC USER LOAD ERROR:", e);
+    alert("Failed to Load CPCC users");
+  }
+}
+
+
+
+
+/* ===== RENDER ===== */
+function render(){
+  orderList.innerHTML = "";
+  let totalAmt = 0;
+
+  for(let n in cart){
+    let i = cart[n];
+    totalAmt += i.qty * i.price;
+
+    orderList.innerHTML += `
+      <div class="order-item">
+        <span class="item-name">${n} ₱${i.price}</span>
+        <span class="qty-controls">
+          <button class="qty-btn" onclick="changeQty('${n}',-1)">-</button>
+          <span class="qty-number">${i.qty}</span>
+          <button class="qty-btn" onclick="changeQty('${n}',1)">+</button>
+        </span>
+        <button class="del-btn" onclick="deleteItem('${n}')">X</button>
+      </div>`;
+  }
+
+  if(!Object.keys(cart).length){
+    total.innerHTML = "";
+    return;
+  }
+
+  const grossTotal = totalAmt;
+  const vatTotal = grossTotal - (grossTotal / 1.12);
+  const netTotal = grossTotal / 1.12;
+
+  const cust = getCustomerName();
+  const limit = CUSTOMER_LIMITS[cust] ?? Infinity;
+  const used = liveCPCCUsed ?? 0;
+
+  const remaining = Math.max(0, limit - used);
+  const covered = Math.min(netTotal, remaining);       // ← use netTotal
+  const excess = Math.max(0, netTotal - remaining);    // ← use netTotal
+  const discount = excess * 0.20;       // 20% discount
+  const cashSettle = excess - discount; // final cash after discount
+
+
+  // 🔹 Show/hide POS receipt input
+  if(excess > 0){
+    excessReceipt.style.display = "block";
+    attachReceiptHandler(); // attach handler dynamically
+  } else {
+    excessReceipt.style.display = "none";
+    receiptNumber.value = ""; // reset if not needed
+  }
+
+
+
+  total.innerHTML = `
+    Gross Total (VAT inclusive): ₱${grossTotal.toFixed(2)}<br>
+    Less VAT (12%): ₱${vatTotal.toFixed(2)}<br>
+    Total Amount (Net): ₱${netTotal.toFixed(2)}<hr>
+    CPCC Used This Month: ₱${used.toFixed(2)}
+    <button onclick="updateCPCC()" style="font-size:12px;margin-left:6px">UPDATE</button><br>
+    Remaining CPCC: ₱${remaining.toFixed(2)}<hr>
+    Excess: ₱${excess.toFixed(2)}<br>
+    Discount (20%): ₱${discount.toFixed(2)}<br>
+    <b>To be Paid in Cash: ₱${cashSettle.toFixed(2)}</b><hr>
+  `;
+}
+
+
+/* ===== CART ===== */
+function addItem(i){
+  cart[i.name] ??= {qty:0, price:i.price};
+  cart[i.name].qty++;
+  render();
+}
+function changeQty(n,d){
+  cart[n].qty += d;
+  if(cart[n].qty <= 0) delete cart[n];
+  render();
+}
+function deleteItem(n){
+  delete cart[n];
+  render();
+}
+
+/* ===== CUSTOMER ===== */
+function handleCustomer(){
+  liveCPCCUsed = null;
+  customerOther.style.display =
+    customerSelect.value === "Others" ? "inline" : "none";
+  render();
+}
+
+function cancelOrder(){
+  if(confirm("Cancel transaction?")){
+    cart = {};
+    liveCPCCUsed = null;
+    resetForm();
+    render();
+  }
+}
+
+function resetForm(){
+  customerSelect.value = "";
+  customerOther.value = "";
+  customerOther.style.display = "none";
+  cpcc.value = "";
+  date.value = "";
+  remarks.value = "";          // ✅ CLEAR REMARKS
+
+  // 🔹 Hide & clear excess payment receipt input
+  excessReceipt.style.display = "none";
+  receiptNumber.value = "";
+}
+
+/* ===== GOOGLE SHEET PUSH ===== */
+async function pushToGoogleSheet(transaction){
+  try {
+    const items = transaction.items;
+    let rows = [];
+
+    const cust  = transaction.customer;
+    const limit = CUSTOMER_LIMITS[cust] ?? Infinity;
+    let remainingCPCC = Math.max(0, limit - (liveCPCCUsed ?? 0));
+
+    for(let name in items){
+      const it = items[name];
+      const lineTotal = it.qty * it.price;
+
+      const netLineTotal = lineTotal / 1.12;           // VAT-excluded
+      const cpccPart = Math.min(netLineTotal, remainingCPCC);
+      const netExcess = Math.max(0, netLineTotal - cpccPart);
+
+      const discount = netExcess * 0.20;
+      const cashPart = netExcess * 0.80;
+
+      remainingCPCC -= cpccPart;
+
+      const vatAmount = lineTotal - netLineTotal;      // VAT 12%
+      const netAmount = netLineTotal;
+
+
+      rows.push([
+        transaction.date,            // A
+        transaction.outlet,          // B
+        transaction.cpcc,            // C
+        transaction.customer,        // D
+        name,                        // E
+        it.qty,                      // F
+        it.price,                    // G
+        lineTotal,                   // H: gross VAT included
+        vatAmount,                   // I: VAT amount
+        netAmount,                   // J: Net Amount (VAT excluded)
+        new Date().toLocaleString(), // K: Timestamp
+        "",                          // L
+        cpccPart,                    // M: CPCC part based on Net Amount
+        cashPart,                     // N ✅
+        discount,                    // O: Discount (20% if excess)
+        "",                          // P
+        transaction.excessReceipt || "",    // Q ✅ RECEIPT #
+        transaction.remarks || ""          // R ✅
+      ]);
+    }
+
+        
+    const url = "https://script.google.com/macros/s/AKfycbwDrI8tBgexxW03K4iQjGZqMK-mZ96PWaObev6TfzWgEDGL7BTEcaU57dpJiUqZxJMv/exec" +
+                "?data=" + encodeURIComponent(JSON.stringify(rows));
+
+    const res = await fetch(url);
+    const text = await res.text();
+    console.log("GOOGLE RESPONSE:", text);
+
+    if(!res.ok){
+      throw new Error("Google rejected: " + text);
+    }
+
+  } catch(e){
+    console.error("PUSH ERROR:", e);
+    throw e;   // lets confirmOrder catch it
+  }
+}
+
+
+
+/* ===== CONFIRM ===== */
+async function confirmOrder(){
+  if(!Object.keys(cart).length){
+    alert("No items in order.");
+    return;
+  }
+
+  const cust = getCustomerName();
+  if(!cust || !cpcc.value.trim() || !date.value){
+    alert("Customer, CPCC Ref #, and Date are required.");
+    return;
+  }
+
+  // 🔐 CPCC must be updated before proceeding
+  if(!cpccFresh){
+    alert("CPCC not yet updated.\nSystem will sync now.");
+    await updateCPCC();
+    return;   // user must press Confirm again after seeing updated totals
+  }
+
+
+  const transaction = {
+    outlet: FIXED_OUTLET,
+    customer: cust,
+    cpcc: cpcc.value.trim(),
+    date: date.value,
+    remarks: remarks.value.trim(),
+    items: cart
+  };
+
+
+  const totalNet = Object.values(cart).reduce((sum, i) => sum + (i.qty * i.price) / 1.12, 0); // VAT-excluded
+  const limit = CUSTOMER_LIMITS[cust] ?? Infinity;
+  const used  = liveCPCCUsed ?? 0;
+  const remaining = Math.max(0, limit - used);
+  const excess = Math.max(0, totalNet - remaining);
+
+  // 🔹 Excess receipt check first
+  if (excess > 0) {
+    excessReceipt.style.display = "block"; // show input box
+    const receipt = receiptNumber.value.trim();
+    if (!receipt) {
+      alert("Please enter the receipt number for the cash payment.");
+      return; // stop confirmation until user enters receipt
+    }
+    transaction.excessReceipt = receipt;
+  } 
+
+  // 🔹 Confirm popup AFTER validation
+  if(!confirm("Confirm this transaction?")) return;
+
+  try {
+    await pushToGoogleSheet(transaction);
+  } catch(e){
+    alert("Failed to push to Google Sheet.");
+    return;
+  }
+
+  cart = {};
+  liveCPCCUsed = null;
+  cpccFresh = false;
+  resetForm();
+  render();
+
+  alert("Transaction saved successfully!");
+}
+
+/* ===== HISTORY ===== */
+
+const HISTORY_OUTLET = FIXED_OUTLET;
+const HISTORY_URL = "https://script.google.com/macros/s/AKfycbwDrI8tBgexxW03K4iQjGZqMK-mZ96PWaObev6TfzWgEDGL7BTEcaU57dpJiUqZxJMv/exec";
+
+function openHistory(){
+  document.body.classList.add("history-open");
+}
+
+function closeHistory(){
+  document.body.classList.remove("history-open");
+}
+
+
+async function fetchHistory(){
+  const from = historyFrom.value;
+  const to   = historyTo.value;
+
+  if (!from || !to) {
+    alert("Please select From and To dates");
+    return;
+  }
+
+  historyBody.innerHTML = "<tr><td colspan='7'>Loading...</td></tr>";
+
+  try {
+    const res  = await fetch(HISTORY_URL);
+    const data = await res.json();
+
+    const grouped = {};
+    historyBody.innerHTML = "";
+
+    data.forEach(r => {
+      const rowDate   = r.date;
+      const rowOutlet = r.outlet;
+
+      if (
+        rowOutlet !== HISTORY_OUTLET ||
+        rowDate < from ||
+        rowDate > to
+      ) return;
+
+      const ref = String(r.cpcc || "").trim();
+      if (!ref) return;
+
+      if (!grouped[ref]) {
+        grouped[ref] = {
+          date: rowDate,
+          cpcc: ref,
+          customer: r.customer,
+          gross: 0,
+          cpccAmt: 0,
+          cash: 0,
+          receipt: r.excessReceipt || "",
+          remarks: r.remarks || ""   // ✅
+        };
+      } else if (rowDate < grouped[ref].date) {
+        grouped[ref].date = rowDate;
+      }
+
+      grouped[ref].gross   += Number(r.lineTotal) || 0;
+      grouped[ref].cpccAmt += Number(r.cpccPart)  || 0;
+      grouped[ref].cash    += Number(r.cashPart)  || 0;
+
+      if (r.excessReceipt) {
+        grouped[ref].receipt = r.excessReceipt;
+      }
+
+      if (r.remarks) {
+        grouped[ref].remarks = r.remarks;
+      }
+
+    });
+
+
+  Object.values(grouped).forEach(row => {
+    const d = new Date(row.date);
+    const formattedDate =
+      String(d.getMonth()+1).padStart(2,"0") + "/" +
+      String(d.getDate()).padStart(2,"0") + "/" +
+      String(d.getFullYear()).slice(-2);
+
+    historyBody.innerHTML += `
+      <tr>
+        <td>${formattedDate}</td>
+        <td>${row.cpcc}</td>
+        <td>${row.customer}</td>
+        <td>₱${row.gross.toFixed(2)}</td>
+        <td>₱${row.cpccAmt.toFixed(2)}</td>
+        <td>₱${row.cash.toFixed(2)}</td>
+        <td>${row.receipt}</td>
+        <td>${row.remarks}</td>   <!-- ✅ -->
+      </tr>
+    `;
+  });
+
+  // ✅ ADD THIS BLOCK
+  if (!Object.keys(grouped).length) {
+    historyBody.innerHTML =
+      "<tr><td colspan='7'>No records found</td></tr>";
+  }
+
+} catch (e) {
+  console.error(e);
+  alert("Failed to fetch history");
+}
+}
+
+const CORRECT_PIN = "1123"; // your PIN
+
+function checkPin() {
+  const val = document.getElementById("pinInput").value;
+  if (val === CORRECT_PIN) {
+    document.getElementById("pinModal").style.display = "none";
+    startApp(); // start the system only after correct PIN
+  } else {
+    alert("Incorrect PIN!");
+  }
+}
+
+// Move the previous init into a separate function
+async function startApp() {
+  await checkTerminal(); // 🔐 MUST finish first
+
+  // 🚀 Load independent data in parallel
+  await Promise.all([
+    fetchCPCCUsers(),
+    fetchMenu()
+  ]);
+}
+
+
+/* ===== INIT ===== */
+let MENU = {}; // will be populated dynamically from the Sheet
+
+// Fetch menu data from your Google Sheet API
+async function fetchMenu() {
+  try {
+    const res = await fetch("https://script.google.com/macros/s/AKfycbyZimO13EeTkpnse2iCD-6BO7s_sk0lOwGzle0kMXa7umegUZWXKDrpbxbEKrlLq0qm/exec");
+    const data = await res.json();
+
+    MENU = {}; // reset
+    data.forEach(item => {
+      const cat = item.category;  // <- matches App Script
+      const name = item.name;     // <- matches App Script
+      const price = Number(item.price); // <- matches App Script
+
+      if (!MENU[cat]) MENU[cat] = [];
+      MENU[cat].push({ name, price });
+    });
+
+    // Sort each category alphabetically
+    for (let c in MENU) {
+      MENU[c].sort((a,b)=> a.name.localeCompare(b.name));
+    }
+
+    renderCategories();
+    
+  } catch(e) {
+    console.error(e);
+    alert("Failed to fetch Menu List");
+  }
+}
+
+
+
+// Render category buttons
+function renderCategories() {
+  categories.style.display = "grid";      // show categories
+  menuGrid.style.display = "none";        // hide menu items
+  backBtn.style.display = "none";         // hide back button
+
+  categories.innerHTML = "";
+  const cats = Object.keys(MENU);
+  cats.forEach(c => {
+    categories.innerHTML += `<button class="cat-btn" onclick="showCategory('${c}')">${c}</button>`;
+  });
+
+  // Add Manual Input button
+  categories.innerHTML += `<button class="cat-btn" onclick="showManualInput()">Manual Input</button>`;
+}
+
+// Show items in menuGrid
+function showCategory(c) {
+  categories.style.display = "none";      // hide categories
+  menuGrid.style.display = "grid";        // show menu items
+  backBtn.style.display = "block";        // show back button
+
+  menuGrid.innerHTML = "";
+  MENU[c].forEach(i => {
+    menuGrid.innerHTML += `<button class="menu-btn" onclick='addItem(${JSON.stringify(i)})'>${i.name} ₱${i.price}</button>`;
+  });
+}
+
+// Show manual input fields in the grid
+function showManualInput() {
+  categories.style.display = "none";      // hide categories
+  menuGrid.style.display = "flex";        // show manual input
+  backBtn.style.display = "block";        // show back button
+
+  menuGrid.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:8px;padding:10px;">
+      <input id="manualName" placeholder="Menu Name">
+      <input id="manualPrice" placeholder="Price" type="number" min="0">
+      <button onclick="addManualItem()">Add to Order</button>
+    </div>
+  `;
+}
+
+// Add manual item to cart
+function addManualItem() {
+  const name = document.getElementById("manualName").value.trim();
+  const price = parseFloat(document.getElementById("manualPrice").value);
+  if (!name || isNaN(price)) {
+    alert("Enter valid Name and Price");
+    return;
+  }
+  addItem({ name, price });
+  menuGrid.innerHTML = ""; // clear grid after adding
+  showCategories();        // go back to categories automatically after adding
+}
+
+// Back to categories
+function showCategories() {
+  renderCategories();
+}
+
+
+
+let activeInput = null;
+
+// ===== DYNAMIC RECEIPT NUMPAD HANDLER =====
+function attachReceiptHandler() {
+  const receiptNumber = document.getElementById("receiptNumber");
+  if (!receiptNumber) return; // safety check
+
+  receiptNumber.onclick = (e) => {
+    e.stopPropagation();         // prevent document click from closing pad
+    activeInput = receiptNumber;
+    numpad.style.display = "block";
+    keyboard.style.display = "none";
+  };
+}
+
+cpcc.onclick = ()=>{ activeInput = cpcc; numpad.style.display="block"; keyboard.style.display="none"; };
+remarks.onclick = ()=>{ activeInput = remarks; keyboard.style.display="block"; numpad.style.display="none"; };
+
+
+
+function padInput(v){
+  if(activeInput) activeInput.value += v;
+}
+function padBack(){
+  if(activeInput) activeInput.value = activeInput.value.slice(0,-1);
+}
+function closePad(){
+  numpad.style.display="none";
+  keyboard.style.display="none";
+  activeInput = null;
+}
+
+document.addEventListener("click", e=>{
+  if(!e.target.closest(".pad") && e.target!==cpcc && e.target!==remarks){
+    closePad();
+  }
+});
+
+cpcc.addEventListener("input", ()=>{
+  cpcc.value = cpcc.value.replace(/\D/g,''); // strip all non-numbers
+});
+
+
+// ===== INIT =====
+(async ()=>{
+  await checkTerminal(); // 🔐 MUST finish first
+
+  // 🚀 Load independent data in parallel
+  await Promise.all([
+    fetchCPCCUsers(),
+    fetchMenu()
+  ]);
+})();
+
+
+
+</script>
+
+
+<!-- NUMPAD -->
+<div id="numpad" class="pad">
+  <div class="pad-header">CPCC <button onclick="closePad()">✕</button></div>
+  <div class="pad-grid">
+    <button onclick="padInput('1')">1</button><button onclick="padInput('2')">2</button><button onclick="padInput('3')">3</button>
+    <button onclick="padInput('4')">4</button><button onclick="padInput('5')">5</button><button onclick="padInput('6')">6</button>
+    <button onclick="padInput('7')">7</button><button onclick="padInput('8')">8</button><button onclick="padInput('9')">9</button>
+    <button onclick="padBack()">⌫</button><button onclick="padInput('0')">0</button><button onclick="closePad()">OK</button>
+  </div>
+</div>
+
+<!-- KEYBOARD -->
+<div id="keyboard" class="pad">
+  <div class="pad-header">Remarks <button onclick="closePad()">✕</button></div>
+
+<div class="kbd-grid">
+  <button onclick="padInput('1')">1</button><button onclick="padInput('2')">2</button><button onclick="padInput('3')">3</button><button onclick="padInput('4')">4</button><button onclick="padInput('5')">5</button>
+  <button onclick="padInput('6')">6</button><button onclick="padInput('7')">7</button><button onclick="padInput('8')">8</button><button onclick="padInput('9')">9</button><button onclick="padInput('0')">0</button>
+
+  <button onclick="padInput('Q')">Q</button><button onclick="padInput('W')">W</button><button onclick="padInput('E')">E</button><button onclick="padInput('R')">R</button><button onclick="padInput('T')">T</button>
+  <button onclick="padInput('Y')">Y</button><button onclick="padInput('U')">U</button><button onclick="padInput('I')">I</button><button onclick="padInput('O')">O</button><button onclick="padInput('P')">P</button>
+
+  <button onclick="padInput('A')">A</button><button onclick="padInput('S')">S</button><button onclick="padInput('D')">D</button><button onclick="padInput('F')">F</button><button onclick="padInput('G')">G</button>
+  <button onclick="padInput('H')">H</button><button onclick="padInput('J')">J</button><button onclick="padInput('K')">K</button><button onclick="padInput('L')">L</button>
+
+  <button onclick="padInput('Z')">Z</button><button onclick="padInput('X')">X</button><button onclick="padInput('C')">C</button><button onclick="padInput('V')">V</button><button onclick="padInput('B')">B</button>
+  <button onclick="padInput('N')">N</button><button onclick="padInput('M')">M</button>
+
+  <button onclick="padBack()">⌫</button>
+  <button onclick="padInput(' ')">SPACE</button>
+  <button onclick="closePad()">OK</button>
+</div>
+
+
+
+
+</body>
+</html>
+
