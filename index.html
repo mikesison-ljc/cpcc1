@@ -71,7 +71,9 @@ slider.addEventListener('change', () => {
     message.style.color = "green";
     slider.disabled = true;
     // Mark session and redirect to app.html
-    sessionStorage.setItem("cpcc_access", "1");
+    const token = crypto.randomUUID();
+    sessionStorage.setItem("cpcc_token", token);
+
     setTimeout(() => {
       window.location.href = "app.html";
     }, 500); // small delay to show the check mark
@@ -92,3 +94,4 @@ slider.addEventListener('change', () => {
 
 </body>
 </html>
+
