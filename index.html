@@ -101,7 +101,7 @@ async function check(){
     return;
   }
 
-  const pin=document.getElementById("pin").value;
+  const pin = document.getElementById("pin").value.trim();
   const cap=document.getElementById("captcha").value;
 
   const hash=await sha256(pin);
@@ -131,3 +131,4 @@ document.addEventListener("keydown",e=>{
 </script>
 </body>
 </html>
+
