@@ -2,96 +2,169 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<title>LJC CPCC System – Verification</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Slider CAPTCHA</title>
+
 <style>
-  body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; margin-top: 50px; }
-  #captcha-container { position: relative; width: 300px; height: 150px; margin-bottom: 20px; }
-  #bg-image { width: 100%; height: 100%; display: block; }
-  #puzzle-piece {
-    position: absolute;
-    width: 50px;
-    height: 50px;
-    background-size: 300px 150px;
-    top: 50px;
-    left: 0;
-    cursor: pointer;
-    box-shadow: 0 0 5px rgba(0,0,0,0.5);
-  }
-  #slider { width: 300px; }
-  #message { font-weight: bold; margin-top: 10px; }
-</style>
-</head>
-<body>
-
-<h2>Slide the puzzle piece to complete the image</h2>
-<div id="captcha-container">
-  <img id="bg-image" src="https://picsum.photos/300/150?random=1" alt="Background">
-  <div id="puzzle-piece"></div>
-</div>
-<input type="range" id="slider" min="0" max="250">
-<div id="message"></div>
-
-<script>
-const puzzle = document.getElementById('puzzle-piece');
-const slider = document.getElementById('slider');
-const message = document.getElementById('message');
-
-// Random target position for puzzle piece
-const target = Math.floor(Math.random() * 100) + 150;
-puzzle.style.backgroundImage = `url('https://picsum.photos/300/150?random=2')`;
-puzzle.style.backgroundPosition = `-${target}px -50px`;
-
-// Load attempt count from session storage
-let attempts = Number(sessionStorage.getItem('sliderAttempts') || 0);
-
-function disableSliderTemporarily(seconds) {
-  slider.disabled = true;
-  message.style.color = 'red';
-  message.textContent = `Too many attempts. Wait ${seconds} seconds.`;
-  setTimeout(() => {
-    slider.disabled = false;
-    slider.value = 0;
-    puzzle.style.left = '0px';
-    attempts = 0;
-    sessionStorage.setItem('sliderAttempts', '0');
-    message.textContent = '';
-  }, seconds * 1000);
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #111;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
 }
 
-slider.addEventListener('input', () => {
-  puzzle.style.left = slider.value + 'px';
+.box {
+  background: #1f1f1f;
+  padding: 24px;
+  border-radius: 10px;
+  width: 340px;
+  text-align: center;
+}
+
+#captcha-container {
+  position: relative;
+  width: 300px;
+  height: 150px;
+  margin: 15px auto;
+  overflow: hidden;
+  border-radius: 6px;
+}
+
+#bg {
+  width: 100%;
+  height: 100%;
+}
+
+#piece {
+  position: absolute;
+  top: 50px;
+  left: 0;
+  width: 50px;
+  height: 50px;
+  background-size: 300px 150px;
+  box-shadow: 0 0 6px rgba(0,0,0,.7);
+}
+
+input[type=range] {
+  width: 300px;
+}
+
+#msg {
+  margin-top: 10px;
+  font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+  <h3>Human Verification</h3>
+  <p>Slide the puzzle to complete the image</p>
+
+  <div id="captcha-container">
+    <img id="bg">
+    <div id="piece"></div>
+  </div>
+
+  <input type="range" id="slider" min="0" max="250" value="0">
+  <div id="msg"></div>
+</div>
+
+<script>
+/* ================= SECURITY STATE ================= */
+
+if (sessionStorage.getItem("cpcc_token")) {
+  // Already verified → go straight to app
+  location.replace("app.html");
+}
+
+const startTime = Date.now();
+let moved = false;
+
+let attempts = Number(sessionStorage.getItem("cap_attempts") || 0);
+if (attempts >= 3) {
+  document.getElementById("msg").innerText =
+    "Too many attempts. Reload page to try again.";
+  document.getElementById("slider").disabled = true;
+  throw "LOCKED";
+}
+
+/* ================= IMAGE SETUP ================= */
+
+const seed = Math.floor(Math.random() * 9999);
+const imgURL = `https://picsum.photos/300/150?random=${seed}`;
+
+const bg = document.getElementById("bg");
+const piece = document.getElementById("piece");
+const slider = document.getElementById("slider");
+const msg = document.getElementById("msg");
+
+bg.src = imgURL;
+piece.style.backgroundImage = `url(${imgURL})`;
+
+/* ================= PUZZLE LOGIC ================= */
+
+const target = Math.floor(Math.random() * 120) + 100;
+piece.style.backgroundPosition = `-${target}px -50px`;
+
+slider.addEventListener("input", () => {
+  moved = true;
+  piece.style.left = slider.value + "px";
 });
 
-slider.addEventListener('change', () => {
-  const current = parseInt(slider.value);
+slider.addEventListener("change", () => {
+  attempts++;
+  sessionStorage.setItem("cap_attempts", attempts);
 
-  if (Math.abs(current - target) < 10) {
-    message.textContent = "✅ Verified!";
-    message.style.color = "green";
+  const elapsed = Date.now() - startTime;
+  const current = Number(slider.value);
+
+  // Too fast = bot-like
+  if (elapsed < 1200) {
+    msg.innerText = "Suspicious activity detected";
+    msg.style.color = "red";
     slider.disabled = true;
-    // Mark session and redirect to app.html
-    const token = crypto.randomUUID();
-    sessionStorage.setItem("cpcc_token", token);
+    return;
+  }
+
+  if (!moved) {
+    msg.innerText = "Invalid interaction";
+    msg.style.color = "red";
+    return;
+  }
+
+  if (Math.abs(current - target) <= 8) {
+    msg.innerText = "✅ Verified";
+    msg.style.color = "lime";
+
+    // Issue secure session token
+    sessionStorage.setItem("cpcc_token", crypto.randomUUID());
+    sessionStorage.removeItem("cap_attempts");
 
     setTimeout(() => {
-      window.location.href = "app.html";
-    }, 500); // small delay to show the check mark
+      location.replace("app.html");
+    }, 500);
+
   } else {
-    attempts++;
-    sessionStorage.setItem('sliderAttempts', attempts);
-    if (attempts >= 3) {
-      disableSliderTemporarily(30); // 30-second wait after 3 failed attempts
-    } else {
-      message.textContent = "❌ Try again!";
-      message.style.color = "red";
-      slider.value = 0;
-      puzzle.style.left = '0px';
-    }
+    msg.innerText = "❌ Try again";
+    msg.style.color = "red";
+    slider.value = 0;
+    piece.style.left = "0px";
   }
+});
+
+/* ================= BASIC DETERRENTS ================= */
+
+document.addEventListener("contextmenu", e => e.preventDefault());
+document.addEventListener("keydown", e => {
+  if (e.key === "F12") location.reload();
 });
 </script>
 
 </body>
 </html>
-
