@@ -21,15 +21,22 @@ body {
   background: #1f1f1f;
   padding: 24px;
   border-radius: 10px;
-  width: 340px;
+  width: 360px;
   text-align: center;
+}
+
+input[type=password] {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  margin-bottom: 10px;
 }
 
 #captcha-container {
   position: relative;
   width: 300px;
   height: 150px;
-  margin: 15px auto;
+  margin: 12px auto;
   overflow: hidden;
   border-radius: 6px;
 }
@@ -63,8 +70,9 @@ input[type=range] {
 <body>
 
 <div class="box">
-  <h3>Human Verification</h3>
-  <p>Slide the puzzle to complete the image</p>
+  <h3>Secure Verification</h3>
+
+  <input type="password" id="pin" placeholder="Enter PIN">
 
   <div id="captcha-container">
     <img id="bg">
@@ -76,89 +84,152 @@ input[type=range] {
 </div>
 
 <script>
-/* ================= SECURITY STATE ================= */
+/* ===========================
+   HARD SECURITY STATE
+=========================== */
 
-if (sessionStorage.getItem("cpcc_token")) {
-  // Already verified → go straight to app
+// One‑time random token per load
+const PAGE_TOKEN = crypto.randomUUID();
+sessionStorage.setItem("page_token", PAGE_TOKEN);
+
+// Already verified?
+if (sessionStorage.getItem("cpcc_session")) {
   location.replace("app.html");
 }
 
+// Timing + integrity
 const startTime = Date.now();
 let moved = false;
 
+// Attempt tracking (session‑persistent)
 let attempts = Number(sessionStorage.getItem("cap_attempts") || 0);
-if (attempts >= 3) {
-  document.getElementById("msg").innerText =
-    "Too many attempts. Reload page to try again.";
-  document.getElementById("slider").disabled = true;
-  throw "LOCKED";
+let lockUntil = Number(sessionStorage.getItem("cap_lock") || 0);
+
+const slider = document.getElementById("slider");
+const msg = document.getElementById("msg");
+
+if (Date.now() < lockUntil) {
+  slider.disabled = true;
+  msg.innerText = "Too many attempts. Please wait…";
+  setTimeout(resetLock, lockUntil - Date.now());
 }
 
-/* ================= IMAGE SETUP ================= */
+/* ===========================
+   IMAGE / PUZZLE SETUP
+=========================== */
 
 const seed = Math.floor(Math.random() * 9999);
 const imgURL = `https://picsum.photos/300/150?random=${seed}`;
 
 const bg = document.getElementById("bg");
 const piece = document.getElementById("piece");
-const slider = document.getElementById("slider");
-const msg = document.getElementById("msg");
 
 bg.src = imgURL;
 piece.style.backgroundImage = `url(${imgURL})`;
 
-/* ================= PUZZLE LOGIC ================= */
-
 const target = Math.floor(Math.random() * 120) + 100;
 piece.style.backgroundPosition = `-${target}px -50px`;
+
+/* ===========================
+   PIN HASH (SHA‑256)
+=========================== */
+
+// SHA‑256 of "1123"
+const PIN_HASH =
+"03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4";
+
+async function hashPIN(pin) {
+  const data = new TextEncoder().encode(pin);
+  const hash = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hash))
+    .map(b => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+/* ===========================
+   SLIDER LOGIC
+=========================== */
 
 slider.addEventListener("input", () => {
   moved = true;
   piece.style.left = slider.value + "px";
 });
 
-slider.addEventListener("change", () => {
+slider.addEventListener("change", async () => {
+  if (slider.disabled) return;
+
   attempts++;
   sessionStorage.setItem("cap_attempts", attempts);
 
   const elapsed = Date.now() - startTime;
   const current = Number(slider.value);
 
-  // Too fast = bot-like
-  if (elapsed < 1200) {
-    msg.innerText = "Suspicious activity detected";
-    msg.style.color = "red";
-    slider.disabled = true;
-    return;
-  }
+  // Human‑timing detection
+  if (elapsed < 1200) return fail("Suspicious speed detected");
 
-  if (!moved) {
-    msg.innerText = "Invalid interaction";
-    msg.style.color = "red";
-    return;
-  }
+  // Integrity check
+  if (!moved) return fail("Invalid interaction");
 
-  if (Math.abs(current - target) <= 8) {
-    msg.innerText = "✅ Verified";
-    msg.style.color = "lime";
+  // Puzzle check
+  if (Math.abs(current - target) > 8) return fail("Incorrect position");
 
-    // Issue secure session token
-    sessionStorage.setItem("cpcc_token", crypto.randomUUID());
-    sessionStorage.removeItem("cap_attempts");
+  // PIN check (hashed)
+  const pin = document.getElementById("pin").value;
+  const pinHash = await hashPIN(pin);
+  if (pinHash !== PIN_HASH) return fail("Invalid PIN");
 
-    setTimeout(() => {
-      location.replace("app.html");
-    }, 500);
+  // SUCCESS
+  sessionStorage.removeItem("cap_attempts");
+  sessionStorage.removeItem("cap_lock");
 
-  } else {
-    msg.innerText = "❌ Try again";
-    msg.style.color = "red";
-    slider.value = 0;
-    piece.style.left = "0px";
-  }
+  // One‑time session token (anti‑manual bypass)
+  sessionStorage.setItem("cpcc_session", crypto.randomUUID());
+
+  msg.innerText = "✅ Verified";
+  msg.style.color = "lime";
+
+  setTimeout(() => location.replace("app.html"), 600);
 });
 
-/* ================= BASIC DETERRENTS ================= */
+/* ===========================
+   FAILURE HANDLER
+=========================== */
+
+function fail(reason) {
+  msg.innerText = "❌ " + reason;
+  msg.style.color = "red";
+
+  slider.value = 0;
+  piece.style.left = "0px";
+
+  if (attempts >= 3) {
+    const until = Date.now() + 30000; // 30 seconds
+    sessionStorage.setItem("cap_lock", until);
+    slider.disabled = true;
+    msg.innerText = "Too many attempts. Wait 30 seconds.";
+    setTimeout(resetLock, 30000);
+  }
+}
+
+function resetLock() {
+  slider.disabled = false;
+  attempts = 0;
+  sessionStorage.removeItem("cap_attempts");
+  sessionStorage.removeItem("cap_lock");
+  msg.innerText = "";
+}
+
+/* ===========================
+   PSYCHOLOGICAL NOISE
+=========================== */
+
+const noiseA = Math.random().toString(36);
+const noiseB = noiseA.length * Math.PI;
+if (noiseB < 0) console.log("integrity mismatch");
+
+/* ===========================
+   BASIC DETERRENTS
+=========================== */
 
 document.addEventListener("contextmenu", e => e.preventDefault());
 document.addEventListener("keydown", e => {
