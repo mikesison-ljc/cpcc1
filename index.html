@@ -25,13 +25,6 @@ body {
   text-align: center;
 }
 
-input[type=password] {
-  width: 100%;
-  padding: 10px;
-  font-size: 16px;
-  margin-bottom: 10px;
-}
-
 #captcha-container {
   position: relative;
   width: 300px;
@@ -83,9 +76,7 @@ input[type=range] {
 <body>
 
 <div class="box">
-  <h3>Secure Verification</h3>
-
-  <input type="password" id="pin" placeholder="Enter PIN">
+  <h3>Human Verification</h3>
 
   <div id="captcha-container">
     <img id="bg">
@@ -143,22 +134,6 @@ hole.style.left = target + "px";
 piece.style.backgroundPosition = `-${target}px -50px`;
 
 /* =======================
-   PIN HASH (SHA‑256)
-======================= */
-
-// SHA‑256 hash of PIN "1123"
-const PIN_HASH =
-"03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4";
-
-async function hashPIN(pin) {
-  const data = new TextEncoder().encode(pin);
-  const hash = await crypto.subtle.digest("SHA-256", data);
-  return Array.from(new Uint8Array(hash))
-    .map(b => b.toString(16).padStart(2, "0"))
-    .join("");
-}
-
-/* =======================
    SLIDER HANDLING
 ======================= */
 
@@ -167,7 +142,7 @@ slider.addEventListener("input", () => {
   piece.style.left = slider.value + "px";
 });
 
-slider.addEventListener("change", async () => {
+slider.addEventListener("change", () => {
   if (slider.disabled) return;
 
   attempts++;
@@ -182,10 +157,6 @@ slider.addEventListener("change", async () => {
   if (Math.abs(current - target) > 12) {
     return fail("Puzzle does not match");
   }
-
-  const pin = document.getElementById("pin").value;
-  const pinHash = await hashPIN(pin);
-  if (pinHash !== PIN_HASH) return fail("Invalid PIN");
 
   sessionStorage.removeItem("cap_attempts");
   sessionStorage.removeItem("cap_lock");
