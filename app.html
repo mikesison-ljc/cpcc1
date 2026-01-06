@@ -1,8 +1,9 @@
 <script>
-if (!sessionStorage.getItem("cpcc_access")) {
-  location.href = "index.html";
+if(sessionStorage.getItem("captchaOK")!=="1"){
+  location.replace("index.html");
 }
 </script>
+
 
 <!DOCTYPE html>
 <html>
