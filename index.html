@@ -21,7 +21,7 @@ body {
   background: #1f1f1f;
   padding: 24px;
   border-radius: 10px;
-  width: 360px;
+  width: 380px;
   text-align: center;
 }
 
@@ -36,16 +36,29 @@ input[type=password] {
   position: relative;
   width: 300px;
   height: 150px;
-  margin: 12px auto;
-  overflow: hidden;
+  margin: 15px auto;
   border-radius: 6px;
+  overflow: hidden;
 }
 
 #bg {
   width: 100%;
   height: 100%;
+  display: block;
 }
 
+/* Visible hole */
+#hole {
+  position: absolute;
+  top: 50px;
+  width: 50px;
+  height: 50px;
+  background: rgba(0,0,0,0.45);
+  border: 2px dashed rgba(255,255,255,0.6);
+  box-sizing: border-box;
+}
+
+/* Puzzle piece */
 #piece {
   position: absolute;
   top: 50px;
@@ -53,7 +66,7 @@ input[type=password] {
   width: 50px;
   height: 50px;
   background-size: 300px 150px;
-  box-shadow: 0 0 6px rgba(0,0,0,.7);
+  box-shadow: 0 0 8px rgba(0,0,0,.8);
 }
 
 input[type=range] {
@@ -76,6 +89,7 @@ input[type=range] {
 
   <div id="captcha-container">
     <img id="bg">
+    <div id="hole"></div>
     <div id="piece"></div>
   </div>
 
@@ -84,24 +98,19 @@ input[type=range] {
 </div>
 
 <script>
-/* ===========================
-   HARD SECURITY STATE
-=========================== */
+/* =======================
+   SESSION + TOKEN LOGIC
+======================= */
 
-// One‑time random token per load
-const PAGE_TOKEN = crypto.randomUUID();
-sessionStorage.setItem("page_token", PAGE_TOKEN);
-
-// Already verified?
 if (sessionStorage.getItem("cpcc_session")) {
   location.replace("app.html");
 }
 
-// Timing + integrity
+sessionStorage.setItem("page_token", crypto.randomUUID());
+
 const startTime = Date.now();
 let moved = false;
 
-// Attempt tracking (session‑persistent)
 let attempts = Number(sessionStorage.getItem("cap_attempts") || 0);
 let lockUntil = Number(sessionStorage.getItem("cap_lock") || 0);
 
@@ -114,27 +123,30 @@ if (Date.now() < lockUntil) {
   setTimeout(resetLock, lockUntil - Date.now());
 }
 
-/* ===========================
-   IMAGE / PUZZLE SETUP
-=========================== */
+/* =======================
+   IMAGE + PUZZLE SETUP
+======================= */
 
 const seed = Math.floor(Math.random() * 9999);
 const imgURL = `https://picsum.photos/300/150?random=${seed}`;
 
 const bg = document.getElementById("bg");
 const piece = document.getElementById("piece");
+const hole = document.getElementById("hole");
 
 bg.src = imgURL;
 piece.style.backgroundImage = `url(${imgURL})`;
 
 const target = Math.floor(Math.random() * 120) + 100;
+
+hole.style.left = target + "px";
 piece.style.backgroundPosition = `-${target}px -50px`;
 
-/* ===========================
+/* =======================
    PIN HASH (SHA‑256)
-=========================== */
+======================= */
 
-// SHA‑256 of "1123"
+// SHA‑256 hash of PIN "1123"
 const PIN_HASH =
 "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4";
 
@@ -146,9 +158,9 @@ async function hashPIN(pin) {
     .join("");
 }
 
-/* ===========================
-   SLIDER LOGIC
-=========================== */
+/* =======================
+   SLIDER HANDLING
+======================= */
 
 slider.addEventListener("input", () => {
   moved = true;
@@ -164,25 +176,19 @@ slider.addEventListener("change", async () => {
   const elapsed = Date.now() - startTime;
   const current = Number(slider.value);
 
-  // Human‑timing detection
   if (elapsed < 1200) return fail("Suspicious speed detected");
-
-  // Integrity check
   if (!moved) return fail("Invalid interaction");
 
-  // Puzzle check
-  if (Math.abs(current - target) > 8) return fail("Incorrect position");
+  if (Math.abs(current - target) > 12) {
+    return fail("Puzzle does not match");
+  }
 
-  // PIN check (hashed)
   const pin = document.getElementById("pin").value;
   const pinHash = await hashPIN(pin);
   if (pinHash !== PIN_HASH) return fail("Invalid PIN");
 
-  // SUCCESS
   sessionStorage.removeItem("cap_attempts");
   sessionStorage.removeItem("cap_lock");
-
-  // One‑time session token (anti‑manual bypass)
   sessionStorage.setItem("cpcc_session", crypto.randomUUID());
 
   msg.innerText = "✅ Verified";
@@ -191,9 +197,9 @@ slider.addEventListener("change", async () => {
   setTimeout(() => location.replace("app.html"), 600);
 });
 
-/* ===========================
-   FAILURE HANDLER
-=========================== */
+/* =======================
+   FAILURE / LOCKOUT
+======================= */
 
 function fail(reason) {
   msg.innerText = "❌ " + reason;
@@ -203,7 +209,7 @@ function fail(reason) {
   piece.style.left = "0px";
 
   if (attempts >= 3) {
-    const until = Date.now() + 30000; // 30 seconds
+    const until = Date.now() + 30000;
     sessionStorage.setItem("cap_lock", until);
     slider.disabled = true;
     msg.innerText = "Too many attempts. Wait 30 seconds.";
@@ -219,17 +225,13 @@ function resetLock() {
   msg.innerText = "";
 }
 
-/* ===========================
-   PSYCHOLOGICAL NOISE
-=========================== */
+/* =======================
+   DECOY NOISE + DETERRENTS
+======================= */
 
 const noiseA = Math.random().toString(36);
 const noiseB = noiseA.length * Math.PI;
-if (noiseB < 0) console.log("integrity mismatch");
-
-/* ===========================
-   BASIC DETERRENTS
-=========================== */
+if (noiseB < 0) console.log("integrity error");
 
 document.addEventListener("contextmenu", e => e.preventDefault());
 document.addEventListener("keydown", e => {
