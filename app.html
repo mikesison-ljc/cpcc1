@@ -8,7 +8,7 @@ if (!sessionStorage.getItem("cpcc_session")) {
 <!DOCTYPE html>
 <html>
 <head>
-<title>LJC CPCC System v3.7.4</title>
+<title>LJC CPCC System v4.1.2</title>
 
 <!-- Inter Font -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -344,9 +344,25 @@ body.history-open #historyContainer {
   <div style="background:white;padding:20px;border-radius:8px;text-align:center;">
     <h2>Enter PIN</h2>
     <input type="password" id="pinInput">
-    <button onclick="checkPin()">Submit</button>
+    <button id="pinSubmit">Submit</button>
   </div>
 </div>
+
+<div id="lockTimer" style="
+    display:none;
+    position:fixed;
+    top:20px;
+    right:20px;
+    padding:12px 20px;
+    background:#ff5555;
+    color:white;
+    font-size:18px;
+    border-radius:6px;
+    z-index:9999;
+">
+  Locked for <span id="lockMinutes">10</span>:<span id="lockSeconds">00</span>
+</div>
+
 
 <header>
   <img src="https://ljcrestaurant.com/wp-content/uploads/2023/08/LJC_-Logo-in-Green-Box.jpg">
@@ -364,7 +380,7 @@ body.history-open #historyContainer {
 
     <!-- Filters -->
     <div style="display:flex; gap:8px; margin-bottom:10px;">
-      <input type="text" value="ABE Trinoma" disabled style="width:140px;">
+      <input type="text" value="FJ MOA" disabled style="width:140px;">
       <input type="date" id="historyFrom">
       <input type="date" id="historyTo">
       <button onclick="fetchHistory()">Fetch</button>
@@ -419,7 +435,7 @@ body.history-open #historyContainer {
 
 
 <div id="topBar" class="cpcc-tabs">
-  <div id="outletBox">ABE Trinoma</div>
+  <div id="outletBox">FJ MOA</div>
 
 
 <select id="customerSelect" onchange="handleCustomer()">
@@ -461,78 +477,518 @@ body.history-open #historyContainer {
   </div>
 </div>
 
+
+
 <script>
+/* ===== SECURITY FLOW (OBFUSCATED – PHASE 1) ===== */
 
-/* ===== TERMINAL LOCK ===== */
+(function () {
 
-const TERMINAL_ID = "ABE_TRINOMA_POS01";
-const LICENSE_URL = "https://script.google.com/macros/s/AKfycbxyVcBUftZ4hMHLCdFdq4wAsyX6a-A94MsexqO1ivAJVDxPqJZ6RQrgJ-3VKCE6czRL/exec";
+  const _k = "CPCC_LJC_2026_PRIVATE_KEY";
 
-async function checkTerminal(){
-  try{
-    const res = await fetch(LICENSE_URL);
-    const data = await res.json();
+  const _t = "FJ_MOA_POS01";
+  const _o = "FJ MOA";
+  window.OUTLET_NAME    = "FJ MOA";  // Friendly name for Google Sheet
+  window.FIXED_OUTLET   = window.OUTLET_NAME; // legacy reference
+  window.HISTORY_OUTLET = window.OUTLET_NAME;
+  window.HISTORY_URL    = "https://script.google.com/macros/s/AKfycbzqT5VRNzKoSH76gbQUOyRuqBPpHBEYLlAtkJPF6lgmLLpAy3ELxADSUT067reuMje66A/exec";
 
-    const today = new Date();
+  const _u =
+    "https://script.google.com/macros/s/AKfycbxlZn5aPGcx5lIgg1-jnTCJgHUZrrynIw5fRMgPeRasZRn-rZeq5ZaLz47V54a8H4Fapg/exec";
 
-    const row = data.find(r =>
-      r.outlet === FIXED_OUTLET &&
-      r.terminal === TERMINAL_ID &&
-      r.active === "Y" &&
-      (!r.expiry || new Date(r.expiry) >= today)
-    );
+  const _s = function (m) {
+    document.body.innerHTML =
+      '<div style="display:flex;align-items:center;justify-content:center;' +
+      'height:100vh;background:#111;color:white;' +
+      'font-size:28px;text-align:center;">' +
+      m +
+      "</div>";
+  };
 
-    if(!row){
-      document.body.innerHTML = `
-        <div style="display:flex;align-items:center;justify-content:center;
-                    height:100vh;background:#111;color:white;
-                    font-size:28px;text-align:center;">
-          TERMINAL DISABLED<br><br>
-          Contact Head Office
-        </div>`;
-      throw "TERMINAL_DISABLED";
+  window._cb = function (p) {
+    try {
+      if (!p.ok) throw 0;
+
+      const d = new Date();
+      const r = p.terminals.find(e =>
+        e.outlet === _o &&
+        e.terminal === _t &&
+        e.active === "Y" &&
+        (!e.expiry || new Date(e.expiry) >= d)
+      );
+
+      if (!r) {
+        _s("TERMINAL DISABLED<br><br>Contact Head Office");
+        return;
+      }
+
+      console.log("✅ Terminal validated");
+      document.getElementById("pinModal").style.display = "flex";
+
+    } catch {
+      _s("LICENSE SERVER UNREACHABLE");
     }
-  }catch(e){
-    document.body.innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:center;
-                  height:100vh;background:#111;color:white;
-                  font-size:28px;text-align:center;">
-        LICENSE SERVER UNREACHABLE
-      </div>`;
-    throw e;
+  };
+
+  
+  window.TERMINAL_URL = _u;
+  window.API_KEY = _k;
+  window.TERMINAL_ID = _t;
+
+})();
+
+</script>
+
+
+<script>
+(function () {
+
+  window._sa = function () {
+    if (typeof window.fetchCPCCUsers === "function") {
+      window.fetchCPCCUsers();
+    } else {
+      console.error("fetchCPCCUsers not found");
+    }
+
+    if (typeof window.fetchMenu === "function") {
+      window.fetchMenu();
+    } else {
+      console.error("fetchMenu not found");
+    }
+  };
+
+  window._pcb = function (r) {
+    if (!r.ok) {
+      alert("PIN server unreachable");
+      return;
+    }
+
+    if (r.valid) {
+      const m = document.getElementById("pinModal");
+      if (m) m.style.display = "none";
+
+      const l = document.getElementById("lockTimer");
+      if (l) l.style.display = "none";
+
+      window._sa();
+      return;
+    }
+
+    if (r.error === "LOCKED") {
+      alert(`Too many attempts. Try again in ${r.retryAfterMinutes} minutes.`);
+      if (r.retryAfterMinutes) {
+        _lc(r.retryAfterMinutes * 60);
+      }
+      return;
+    }
+
+    if (r.error === "TOO_MANY_ATTEMPTS") {
+      alert(`Too many attempts. Locked for ${r.lockedMinutes} minutes.`);
+      return;
+    }
+
+    alert("Incorrect PIN");
+  };
+
+  let _li;
+
+  function _lc(t) {
+    const d = document.getElementById("lockTimer");
+    const m = document.getElementById("lockMinutes");
+    const s = document.getElementById("lockSeconds");
+
+    if (_li) clearInterval(_li);
+    d.style.display = "block";
+
+    let r = t;
+
+    _li = setInterval(() => {
+      const mm = Math.floor(r / 60);
+      const ss = r % 60;
+
+      m.textContent = String(mm).padStart(2, "0");
+      s.textContent = String(ss).padStart(2, "0");
+
+      r--;
+
+      if (r < 0) {
+        clearInterval(_li);
+        d.style.display = "none";
+      }
+    }, 1000);
   }
+
+  function _vp() {
+    const p = document.getElementById("pinInput").value;
+    if (!p) {
+      alert("Enter PIN");
+      return;
+    }
+
+    const x = document.createElement("script");
+    x.src =
+      TERMINAL_URL +
+      "?apiKey=" + encodeURIComponent(API_KEY) +
+      "&action=validatePin" +
+      "&pin=" + encodeURIComponent(p) +
+      "&terminal=" + encodeURIComponent(TERMINAL_ID) +
+      "&callback=_pcb";
+
+    x.onerror = () => alert("PIN server unreachable");
+    document.head.appendChild(x);
+  }
+
+  document
+    .getElementById("pinSubmit")
+    .addEventListener("click", _vp);
+
+})();
+</script>
+
+<script>
+// ==========================
+// SESSION-PROTECTED CALLS
+// ==========================
+
+function validateTerminal() {
+  const s = document.createElement("script");
+  s.src =
+    TERMINAL_URL +
+    "?apiKey=" + encodeURIComponent(API_KEY) +
+    "&action=checkTerminal" +
+    "&terminal=" + encodeURIComponent(TERMINAL_ID) +
+    "&sessionToken=" + encodeURIComponent(window.SESSION_TOKEN) +
+    "&callback=_cb";
+
+  s.onerror = () => _s("LICENSE SERVER UNREACHABLE");
+  document.head.appendChild(s);
 }
 
+</script>
+
+<script>
+(function () {
+
+  /* ===== DATA ===== */
+  let _cl = {};
+  let _c = {};
+  window._u = null;
+  window._f = false;
+
+  /* ===== HELPERS ===== */
+  function _mk(d){
+    const x = new Date(d);
+    return x.getFullYear() + "-" + (x.getMonth() + 1);
+  }
+
+  function _cn(){
+    return customerSelect.value === "Others"
+      ? customerOther.value.trim()
+      : customerSelect.value;
+  }
 
 
-const FIXED_OUTLET = "ABE Trinoma";
-let CUSTOMER_LIMITS = {};
+  /* ===== USERS ===== */
+  window._ucb = function (d) {
+    if (!d.users) {
+      alert("Invalid CPCC user payload");
+      return;
+    }
+
+    _cl = {};
+    customerSelect.innerHTML = `<option value="">Select Customer</option>`;
+
+    d.users.forEach(u => {
+      _cl[u.name] = Number(u.limit) || 0;
+      customerSelect.innerHTML += `<option value="${u.name}">${u.name}</option>`;
+    });
+
+    customerSelect.innerHTML += `<option value="Others">Others</option>`;
+  };
+
+  function fetchCPCCUsers(){
+    const s = document.createElement("script");
+    s.src =
+      "https://script.google.com/macros/s/AKfycbyvRXjrMnOmhVG06q60b0SjNbhahSgk8T1wvzeYg2QFb6JZ0XNqQyJGxMzzyk4BOcLtUg/exec" +
+      "?apiKey=" + encodeURIComponent(API_KEY) +
+      "&callback=_ucb";
+    document.head.appendChild(s);
+  }
+
+  function fetchMenu() {
+    // your original fetchMenu body here
+    // leave it as is, or define a minimal dummy if not needed yet
+  }
+
+  /* ===== EXPORT FOR PIN FLOW ===== */
+  window.fetchCPCCUsers = fetchCPCCUsers;
+  window.fetchMenu      = fetchMenu;
+
+  /* ===== RENDER ===== */
+  function _r(){
+    orderList.innerHTML = "";
+    let t = 0;
+
+    for (let n in _c) {
+      const i = _c[n];
+      t += i.qty * i.price;
+
+      orderList.innerHTML += `
+        <div class="order-item">
+          <span class="item-name">${n} ₱${i.price}</span>
+          <span class="qty-controls">
+            <button class="qty-btn" onclick="changeQty('${n}',-1)">-</button>
+            <span class="qty-number">${i.qty}</span>
+            <button class="qty-btn" onclick="changeQty('${n}',1)">+</button>
+          </span>
+          <button class="del-btn" onclick="deleteItem('${n}')">X</button>
+        </div>`;
+    }
+
+    if (!Object.keys(_c).length) {
+      total.innerHTML = "";
+      return;
+    }
+
+    const g = t;
+    const v = g - g / 1.12;
+    const n = g / 1.12;
+
+    const k = _cn();
+    const l = _cl[k] ?? Infinity;
+    const u = _u ?? 0;
+
+    const r = Math.max(0, l - u);
+    const e = Math.max(0, n - r);
+    const d = e * 0.20;
+    const cs = e - d;
+
+    if (e > 0) {
+      excessReceipt.style.display = "block";
+      attachReceiptHandler();
+    } else {
+      excessReceipt.style.display = "none";
+      receiptNumber.value = "";
+    }
+
+    total.innerHTML = `
+      Gross Total (VAT inclusive): ₱${g.toFixed(2)}<br>
+      Less VAT (12%): ₱${v.toFixed(2)}<br>
+      Total Amount (Net): ₱${n.toFixed(2)}<hr>
+      CPCC Used This Month: ₱${u.toFixed(2)}
+      <button onclick="_uc()" style="font-size:12px;margin-left:6px">UPDATE</button><br>
+      Remaining CPCC: ₱${r.toFixed(2)}<hr>
+      Excess: ₱${e.toFixed(2)}<br>
+      Discount (20%): ₱${d.toFixed(2)}<br>
+      <b>To be Paid in Cash: ₱${cs.toFixed(2)}</b><hr>
+    `;
+  }
+
+  window._r = _r;   // 🔑 expose renderer globally
 
 
-/* ===== DATA ===== */
+  /* ===== CART ===== */
+  window.addItem = function(i){
+    _c[i.name] ??= { qty: 0, price: i.price };
+    _c[i.name].qty++;
+    _r();
+  };
+
+  window.changeQty = function(n,d){
+    _c[n].qty += d;
+    if (_c[n].qty <= 0) delete _c[n];
+    _r();
+  };
+
+  window.deleteItem = function(n){
+    delete _c[n];
+    _r();
+  };
+
+  /* ===== CUSTOMER ===== */
+  window.handleCustomer = function(){
+    _u = null;
+    customerOther.style.display =
+      customerSelect.value === "Others" ? "inline" : "none";
+    _r();
+  };
+
+  window.cancelOrder = function(){
+    if (confirm("Cancel transaction?")) {
+      _c = {};
+      _u = null;
+      _rf();
+      _r();
+    }
+  };
+
+  function _rf(){
+    customerSelect.value = "";
+    customerOther.value = "";
+    customerOther.style.display = "none";
+    cpcc.value = "";
+    date.value = "";
+    remarks.value = "";
+    excessReceipt.style.display = "none";
+    receiptNumber.value = "";
+  }
 
 
-let cart = {};
-let liveCPCCUsed = null;
+  /* ===== GOOGLE SHEET PUSH ===== */
+  async function pushToGoogleSheet() {
+    try {
+      const items = _c;
 
-let cpccFresh = false;
+      if (!Object.keys(items).length) {
+        throw new Error("No items to push");
+      }
+
+      const customer = _cn();
+      const limit = _cl[customer] ?? Infinity;
+      let remainingCPCC = Math.max(0, limit - (_u ?? 0));
+
+      let rows = [];
+
+      for (let name in items) {
+        const it = items[name];
+        const lineTotal = it.qty * it.price;
+
+        const netLineTotal = lineTotal / 1.12;       // VAT-excluded
+        const cpccPart = Math.min(netLineTotal, remainingCPCC);
+        const netExcess = Math.max(0, netLineTotal - cpccPart);
+
+        const discount = netExcess * 0.20;
+        const cashPart = netExcess * 0.80;
+
+        remainingCPCC -= cpccPart;
+
+       const vatAmount = lineTotal - netLineTotal;
+
+        rows.push([
+          date.value,                     // A Date
+          OUTLET_NAME,                   // B Outlet
+          cpcc.value,                    // C CPCC Ref
+          customer,                      // D Customer
+          name,                          // E Item
+          it.qty,                        // F Qty
+          it.price,                     // G Unit Price
+          lineTotal,                    // H Gross
+          vatAmount,                    // I VAT
+          netLineTotal,                 // J Net
+          new Date().toLocaleString(),  // K Timestamp
+          "",                            // L
+          cpccPart,                     // M CPCC Part
+          cashPart,                     // N Cash Part
+          discount,                     // O Discount
+          "",                            // P
+          receiptNumber.value || "",    // Q Receipt #
+          remarks.value || ""           // R Remarks
+        ]);
+      }
+
+      const url =
+        "https://script.google.com/macros/s/AKfycbzqT5VRNzKoSH76gbQUOyRuqBPpHBEYLlAtkJPF6lgmLLpAy3ELxADSUT067reuMje66A/exec" +
+        "?apiKey=" + encodeURIComponent(API_KEY) +
+        "&data=" + encodeURIComponent(JSON.stringify(rows));
+  
+      const res = await fetch(url);
+      const text = await res.text();
+      console.log("GOOGLE RESPONSE:", text);
+ 
+      if (!res.ok) {
+        throw new Error(text);
+      }
+
+    } catch (e) {
+      console.error("PUSH ERROR:", e);
+      throw e;
+    }
+  }
 
 
-/* ===== HELPERS ===== */
-function getMonthKey(d){
-  let x = new Date(d);
-  return x.getFullYear() + "-" + (x.getMonth()+1);
-}
+  /* ===== CONFIRM ===== */
+  window.confirmOrder = async function(){
+    if (!window.API_KEY) {
+      alert("Terminal not validated yet");
+      return;
+    }
 
-function getCustomerName(){
-  return customerSelect.value === "Others"
-    ? customerOther.value.trim()
-    : customerSelect.value;
-}
 
-/* ===== CPCC UPDATE ===== */
-async function updateCPCC() {
-  const cust = getCustomerName();
+    if (!Object.keys(_c).length) {
+      alert("No items in order.");
+      return;
+    }
+
+    const k = _cn();
+    if (!k || !cpcc.value.trim() || !date.value) {
+      alert("Customer, CPCC Ref #, and Date are required.");
+      return;
+    }
+
+    if (!_f) {
+      alert("CPCC not yet updated.\nSystem will sync now.");
+      await new Promise(resolve => {
+        const old = _f;
+        window._uc();
+        const i = setInterval(() => {
+          if (_f !== old) {
+            clearInterval(i);
+            resolve();
+          }
+        }, 100);
+      });
+      return;
+    }
+
+
+    // 🔹 If there's excess, require receipt number
+    const totalNet = Object.values(_c).reduce((sum, i) => sum + (i.qty * i.price) / 1.12, 0);
+    const limit = _cl[k] ?? Infinity;
+    const used = _u ?? 0;
+    const remaining = Math.max(0, limit - used);
+    const excess = Math.max(0, totalNet - remaining);
+
+    if (excess > 0) {
+      excessReceipt.style.display = "block";
+      const receipt = receiptNumber.value.trim();
+      if (!receipt) {
+        alert("Please enter the receipt number for the cash payment.");
+        return;
+      }
+    }
+
+    // 🔹 Confirm popup before pushing
+    if (!confirm("Confirm this transaction?")) return;
+  
+    // 🔹 Push to Google Sheet
+    try {
+      await pushToGoogleSheet();
+      alert("Transaction saved successfully!");
+    } catch (e) {
+      alert("Transaction failed to upload.\nPlease retry.");
+      return;
+    }
+
+
+    _c = {};
+    _u = null;
+    _f = false;
+    _rf();
+    _r();
+  };
+
+})();
+</script>
+
+
+
+<script>
+window._uc = async function () {
+  const cust =
+    customerSelect.value === "Others"
+      ? customerOther.value.trim()
+      : customerSelect.value;
+
   if (!cust || !date.value) {
     alert("Select customer & date");
     return;
@@ -540,609 +996,356 @@ async function updateCPCC() {
 
   total.innerHTML = "Updating CPCC...";
 
-  let res;
+  let res, text;
   try {
     res = await fetch(
-      "https://script.google.com/macros/s/AKfycbwDrI8tBgexxW03K4iQjGZqMK-mZ96PWaObev6TfzWgEDGL7BTEcaU57dpJiUqZxJMv/exec"
+      HISTORY_URL + "?apiKey=" + encodeURIComponent(API_KEY),
+      { cache: "no-store" }
     );
   } catch {
     alert("Failed to reach CPCC server.");
     return;
   }
 
-  const data = await res.json();
-  
+  if (!res.ok) {
+    alert("CPCC server error: " + res.status);
+    return;
+  }
 
-  const month = getMonthKey(date.value);
-  liveCPCCUsed = 0;
+  try {
+    text = await res.text();
+  } catch {
+    alert("Failed to read CPCC response.");
+    return;
+  }
 
-  data.forEach(r => {
-    const rowCustomer = r.customer;       
-    const rowDate     = r.date;
-    const rowTotal    = Number(r.cpccPart ?? r.lineTotal ?? 0);
-
-    if (rowCustomer === cust && getMonthKey(rowDate) === month) {
-      liveCPCCUsed += rowTotal;
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    const m = text.match(/\{[\s\S]*\}/);
+    if (!m) {
+      alert("Invalid CPCC server response.");
+      return;
     }
+    data = JSON.parse(m[0]);
+  }
+
+  const rows = Array.isArray(data) ? data : [];
+
+  // 🔐 normalize selected month
+  const sd = new Date(date.value);
+  const selMonth =
+    sd.getFullYear() + "-" + (sd.getMonth() + 1);
+
+  let used = 0;
+
+  rows.forEach(r => {
+    if (!r.customer || !r.date) return;
+
+    // 🧼 normalize customer strings
+    const rowCustomer = String(r.customer).trim();
+    const selCustomer = cust.trim();
+
+    if (rowCustomer !== selCustomer) return;
+
+    // 🗓 normalize row month
+    const rd = new Date(r.date);
+    const rowMonth =
+      rd.getFullYear() + "-" + (rd.getMonth() + 1);
+
+    if (rowMonth !== selMonth) return;
+
+    // 💰 backend-aligned CPCC usage
+    used += Number(r.cpccPart || r.lineTotal || 0);
   });
 
-  render();
-  cpccFresh = true;
+  // 🔁 sync to app state
+  window._u = used;   // CPCC used this month
+  window._f = true;   // CPCC fresh
 
-
-}
-
-
-async function fetchCPCCUsers(){
-  try {
-    const res = await fetch(
-      "https://script.google.com/macros/s/AKfycbw1JlHXutmB37LrjlE-hpfafrpoGqH2GNr6jj77qb_f3kZfOV5YM04-dLmcKAq_Kb7qfQ/exec"
-    );
-
-    const data = await res.json();
-
-    if (!data.users || !Array.isArray(data.users)) {
-      throw new Error("Invalid CPCC user payload");
-    }
-
-    CUSTOMER_LIMITS = {};
-    customerSelect.innerHTML =
-      `<option value="">Select Customer</option>`;
-
-    data.users.forEach(u => {
-      CUSTOMER_LIMITS[u.name] = Number(u.limit) || 0;
-
-      customerSelect.innerHTML +=
-        `<option value="${u.name}">${u.name}</option>`;
-    });
-
-    customerSelect.innerHTML +=
-      `<option value="Others">Others</option>`;
-
-  } catch(e){
-    console.error("CPCC USER LOAD ERROR:", e);
-    alert("Failed to Load CPCC users");
+  // 🔄 refresh UI
+  if (typeof _r === "function") {
+    _r();
   }
-}
-
-
-
-
-/* ===== RENDER ===== */
-function render(){
-  orderList.innerHTML = "";
-  let totalAmt = 0;
-
-  for(let n in cart){
-    let i = cart[n];
-    totalAmt += i.qty * i.price;
-
-    orderList.innerHTML += `
-      <div class="order-item">
-        <span class="item-name">${n} ₱${i.price}</span>
-        <span class="qty-controls">
-          <button class="qty-btn" onclick="changeQty('${n}',-1)">-</button>
-          <span class="qty-number">${i.qty}</span>
-          <button class="qty-btn" onclick="changeQty('${n}',1)">+</button>
-        </span>
-        <button class="del-btn" onclick="deleteItem('${n}')">X</button>
-      </div>`;
-  }
-
-  if(!Object.keys(cart).length){
-    total.innerHTML = "";
-    return;
-  }
-
-  const grossTotal = totalAmt;
-  const vatTotal = grossTotal - (grossTotal / 1.12);
-  const netTotal = grossTotal / 1.12;
-
-  const cust = getCustomerName();
-  const limit = CUSTOMER_LIMITS[cust] ?? Infinity;
-  const used = liveCPCCUsed ?? 0;
-
-  const remaining = Math.max(0, limit - used);
-  const covered = Math.min(netTotal, remaining);       // ← use netTotal
-  const excess = Math.max(0, netTotal - remaining);    // ← use netTotal
-  const discount = excess * 0.20;       // 20% discount
-  const cashSettle = excess - discount; // final cash after discount
-
-
-  // 🔹 Show/hide POS receipt input
-  if(excess > 0){
-    excessReceipt.style.display = "block";
-    attachReceiptHandler(); // attach handler dynamically
-  } else {
-    excessReceipt.style.display = "none";
-    receiptNumber.value = ""; // reset if not needed
-  }
-
-
-
-  total.innerHTML = `
-    Gross Total (VAT inclusive): ₱${grossTotal.toFixed(2)}<br>
-    Less VAT (12%): ₱${vatTotal.toFixed(2)}<br>
-    Total Amount (Net): ₱${netTotal.toFixed(2)}<hr>
-    CPCC Used This Month: ₱${used.toFixed(2)}
-    <button onclick="updateCPCC()" style="font-size:12px;margin-left:6px">UPDATE</button><br>
-    Remaining CPCC: ₱${remaining.toFixed(2)}<hr>
-    Excess: ₱${excess.toFixed(2)}<br>
-    Discount (20%): ₱${discount.toFixed(2)}<br>
-    <b>To be Paid in Cash: ₱${cashSettle.toFixed(2)}</b><hr>
-  `;
-}
-
-
-/* ===== CART ===== */
-function addItem(i){
-  cart[i.name] ??= {qty:0, price:i.price};
-  cart[i.name].qty++;
-  render();
-}
-function changeQty(n,d){
-  cart[n].qty += d;
-  if(cart[n].qty <= 0) delete cart[n];
-  render();
-}
-function deleteItem(n){
-  delete cart[n];
-  render();
-}
-
-/* ===== CUSTOMER ===== */
-function handleCustomer(){
-  liveCPCCUsed = null;
-  customerOther.style.display =
-    customerSelect.value === "Others" ? "inline" : "none";
-  render();
-}
-
-function cancelOrder(){
-  if(confirm("Cancel transaction?")){
-    cart = {};
-    liveCPCCUsed = null;
-    resetForm();
-    render();
-  }
-}
-
-function resetForm(){
-  customerSelect.value = "";
-  customerOther.value = "";
-  customerOther.style.display = "none";
-  cpcc.value = "";
-  date.value = "";
-  remarks.value = "";          // ✅ CLEAR REMARKS
-
-  // 🔹 Hide & clear excess payment receipt input
-  excessReceipt.style.display = "none";
-  receiptNumber.value = "";
-}
-
-/* ===== GOOGLE SHEET PUSH ===== */
-async function pushToGoogleSheet(transaction){
-  try {
-    const items = transaction.items;
-    let rows = [];
-
-    const cust  = transaction.customer;
-    const limit = CUSTOMER_LIMITS[cust] ?? Infinity;
-    let remainingCPCC = Math.max(0, limit - (liveCPCCUsed ?? 0));
-
-    for(let name in items){
-      const it = items[name];
-      const lineTotal = it.qty * it.price;
-
-      const netLineTotal = lineTotal / 1.12;           // VAT-excluded
-      const cpccPart = Math.min(netLineTotal, remainingCPCC);
-      const netExcess = Math.max(0, netLineTotal - cpccPart);
-
-      const discount = netExcess * 0.20;
-      const cashPart = netExcess * 0.80;
-
-      remainingCPCC -= cpccPart;
-
-      const vatAmount = lineTotal - netLineTotal;      // VAT 12%
-      const netAmount = netLineTotal;
-
-
-      rows.push([
-        transaction.date,            // A
-        transaction.outlet,          // B
-        transaction.cpcc,            // C
-        transaction.customer,        // D
-        name,                        // E
-        it.qty,                      // F
-        it.price,                    // G
-        lineTotal,                   // H: gross VAT included
-        vatAmount,                   // I: VAT amount
-        netAmount,                   // J: Net Amount (VAT excluded)
-        new Date().toLocaleString(), // K: Timestamp
-        "",                          // L
-        cpccPart,                    // M: CPCC part based on Net Amount
-        cashPart,                     // N ✅
-        discount,                    // O: Discount (20% if excess)
-        "",                          // P
-        transaction.excessReceipt || "",    // Q ✅ RECEIPT #
-        transaction.remarks || ""          // R ✅
-      ]);
-    }
-
-        
-    const url = "https://script.google.com/macros/s/AKfycbwDrI8tBgexxW03K4iQjGZqMK-mZ96PWaObev6TfzWgEDGL7BTEcaU57dpJiUqZxJMv/exec" +
-                "?data=" + encodeURIComponent(JSON.stringify(rows));
-
-    const res = await fetch(url);
-    const text = await res.text();
-    console.log("GOOGLE RESPONSE:", text);
-
-    if(!res.ok){
-      throw new Error("Google rejected: " + text);
-    }
-
-  } catch(e){
-    console.error("PUSH ERROR:", e);
-    throw e;   // lets confirmOrder catch it
-  }
-}
-
-
-
-/* ===== CONFIRM ===== */
-async function confirmOrder(){
-  if(!Object.keys(cart).length){
-    alert("No items in order.");
-    return;
-  }
-
-  const cust = getCustomerName();
-  if(!cust || !cpcc.value.trim() || !date.value){
-    alert("Customer, CPCC Ref #, and Date are required.");
-    return;
-  }
-
-  // 🔐 CPCC must be updated before proceeding
-  if(!cpccFresh){
-    alert("CPCC not yet updated.\nSystem will sync now.");
-    await updateCPCC();
-    return;   // user must press Confirm again after seeing updated totals
-  }
-
-
-  const transaction = {
-    outlet: FIXED_OUTLET,
-    customer: cust,
-    cpcc: cpcc.value.trim(),
-    date: date.value,
-    remarks: remarks.value.trim(),
-    items: cart
-  };
-
-
-  const totalNet = Object.values(cart).reduce((sum, i) => sum + (i.qty * i.price) / 1.12, 0); // VAT-excluded
-  const limit = CUSTOMER_LIMITS[cust] ?? Infinity;
-  const used  = liveCPCCUsed ?? 0;
-  const remaining = Math.max(0, limit - used);
-  const excess = Math.max(0, totalNet - remaining);
-
-  // 🔹 Excess receipt check first
-  if (excess > 0) {
-    excessReceipt.style.display = "block"; // show input box
-    const receipt = receiptNumber.value.trim();
-    if (!receipt) {
-      alert("Please enter the receipt number for the cash payment.");
-      return; // stop confirmation until user enters receipt
-    }
-    transaction.excessReceipt = receipt;
-  } 
-
-  // 🔹 Confirm popup AFTER validation
-  if(!confirm("Confirm this transaction?")) return;
-
-  try {
-    await pushToGoogleSheet(transaction);
-  } catch(e){
-    alert("Failed to push to Google Sheet.");
-    return;
-  }
-
-  cart = {};
-  liveCPCCUsed = null;
-  cpccFresh = false;
-  resetForm();
-  render();
-
-  alert("Transaction saved successfully!");
-}
-
-/* ===== HISTORY ===== */
-
-const HISTORY_OUTLET = FIXED_OUTLET;
-const HISTORY_URL = "https://script.google.com/macros/s/AKfycbwDrI8tBgexxW03K4iQjGZqMK-mZ96PWaObev6TfzWgEDGL7BTEcaU57dpJiUqZxJMv/exec";
-
-function openHistory(){
-  document.body.classList.add("history-open");
-}
-
-function closeHistory(){
-  document.body.classList.remove("history-open");
-}
-
-
-async function fetchHistory(){
-  const from = historyFrom.value;
-  const to   = historyTo.value;
-
-  if (!from || !to) {
-    alert("Please select From and To dates");
-    return;
-  }
-
-  historyBody.innerHTML = "<tr><td colspan='7'>Loading...</td></tr>";
-
-  try {
-    const res  = await fetch(HISTORY_URL);
-    const data = await res.json();
-
-    const grouped = {};
-    historyBody.innerHTML = "";
-
-    data.forEach(r => {
-      const rowDate   = r.date;
-      const rowOutlet = r.outlet;
-
-      if (
-        rowOutlet !== HISTORY_OUTLET ||
-        rowDate < from ||
-        rowDate > to
-      ) return;
-
-      const ref = String(r.cpcc || "").trim();
-      if (!ref) return;
-
-      if (!grouped[ref]) {
-        grouped[ref] = {
-          date: rowDate,
-          cpcc: ref,
-          customer: r.customer,
-          gross: 0,
-          cpccAmt: 0,
-          cash: 0,
-          receipt: r.excessReceipt || "",
-          remarks: r.remarks || ""   // ✅
-        };
-      } else if (rowDate < grouped[ref].date) {
-        grouped[ref].date = rowDate;
-      }
-
-      grouped[ref].gross   += Number(r.lineTotal) || 0;
-      grouped[ref].cpccAmt += Number(r.cpccPart)  || 0;
-      grouped[ref].cash    += Number(r.cashPart)  || 0;
-
-      if (r.excessReceipt) {
-        grouped[ref].receipt = r.excessReceipt;
-      }
-
-      if (r.remarks) {
-        grouped[ref].remarks = r.remarks;
-      }
-
-    });
-
-
-  Object.values(grouped).forEach(row => {
-    const d = new Date(row.date);
-    const formattedDate =
-      String(d.getMonth()+1).padStart(2,"0") + "/" +
-      String(d.getDate()).padStart(2,"0") + "/" +
-      String(d.getFullYear()).slice(-2);
-
-    historyBody.innerHTML += `
-      <tr>
-        <td>${formattedDate}</td>
-        <td>${row.cpcc}</td>
-        <td>${row.customer}</td>
-        <td>₱${row.gross.toFixed(2)}</td>
-        <td>₱${row.cpccAmt.toFixed(2)}</td>
-        <td>₱${row.cash.toFixed(2)}</td>
-        <td>${row.receipt}</td>
-        <td>${row.remarks}</td>   <!-- ✅ -->
-      </tr>
-    `;
-  });
-
-  // ✅ ADD THIS BLOCK
-  if (!Object.keys(grouped).length) {
-    historyBody.innerHTML =
-      "<tr><td colspan='7'>No records found</td></tr>";
-  }
-
-} catch (e) {
-  console.error(e);
-  alert("Failed to fetch history");
-}
-}
-
-const CORRECT_PIN = "1123"; // your PIN
-
-function checkPin() {
-  const val = document.getElementById("pinInput").value;
-  if (val === CORRECT_PIN) {
-    document.getElementById("pinModal").style.display = "none";
-    startApp(); // start the system only after correct PIN
-  } else {
-    alert("Incorrect PIN!");
-  }
-}
-
-// Move the previous init into a separate function
-async function startApp() {
-  await checkTerminal(); // 🔐 MUST finish first
-
-  // 🚀 Load independent data in parallel
-  await Promise.all([
-    fetchCPCCUsers(),
-    fetchMenu()
-  ]);
-}
-
-
-/* ===== INIT ===== */
-let MENU = {}; // will be populated dynamically from the Sheet
-
-// Fetch menu data from your Google Sheet API
-async function fetchMenu() {
-  try {
-    const res = await fetch("https://script.google.com/macros/s/AKfycbyZimO13EeTkpnse2iCD-6BO7s_sk0lOwGzle0kMXa7umegUZWXKDrpbxbEKrlLq0qm/exec");
-    const data = await res.json();
-
-    MENU = {}; // reset
-    data.forEach(item => {
-      const cat = item.category;  // <- matches App Script
-      const name = item.name;     // <- matches App Script
-      const price = Number(item.price); // <- matches App Script
-
-      if (!MENU[cat]) MENU[cat] = [];
-      MENU[cat].push({ name, price });
-    });
-
-    // Sort each category alphabetically
-    for (let c in MENU) {
-      MENU[c].sort((a,b)=> a.name.localeCompare(b.name));
-    }
-
-    renderCategories();
-    
-  } catch(e) {
-    console.error(e);
-    alert("Failed to fetch Menu List");
-  }
-}
-
-
-
-// Render category buttons
-function renderCategories() {
-  categories.style.display = "grid";      // show categories
-  menuGrid.style.display = "none";        // hide menu items
-  backBtn.style.display = "none";         // hide back button
-
-  categories.innerHTML = "";
-  const cats = Object.keys(MENU);
-  cats.forEach(c => {
-    categories.innerHTML += `<button class="cat-btn" onclick="showCategory('${c}')">${c}</button>`;
-  });
-
-  // Add Manual Input button
-  categories.innerHTML += `<button class="cat-btn" onclick="showManualInput()">Manual Input</button>`;
-}
-
-// Show items in menuGrid
-function showCategory(c) {
-  categories.style.display = "none";      // hide categories
-  menuGrid.style.display = "grid";        // show menu items
-  backBtn.style.display = "block";        // show back button
-
-  menuGrid.innerHTML = "";
-  MENU[c].forEach(i => {
-    menuGrid.innerHTML += `<button class="menu-btn" onclick='addItem(${JSON.stringify(i)})'>${i.name} ₱${i.price}</button>`;
-  });
-}
-
-// Show manual input fields in the grid
-function showManualInput() {
-  categories.style.display = "none";      // hide categories
-  menuGrid.style.display = "flex";        // show manual input
-  backBtn.style.display = "block";        // show back button
-
-  menuGrid.innerHTML = `
-    <div style="display:flex;flex-direction:column;gap:8px;padding:10px;">
-      <input id="manualName" placeholder="Menu Name">
-      <input id="manualPrice" placeholder="Price" type="number" min="0">
-      <button onclick="addManualItem()">Add to Order</button>
-    </div>
-  `;
-}
-
-// Add manual item to cart
-function addManualItem() {
-  const name = document.getElementById("manualName").value.trim();
-  const price = parseFloat(document.getElementById("manualPrice").value);
-  if (!name || isNaN(price)) {
-    alert("Enter valid Name and Price");
-    return;
-  }
-  addItem({ name, price });
-  menuGrid.innerHTML = ""; // clear grid after adding
-  showCategories();        // go back to categories automatically after adding
-}
-
-// Back to categories
-function showCategories() {
-  renderCategories();
-}
-
-
-
-let activeInput = null;
-
-// ===== DYNAMIC RECEIPT NUMPAD HANDLER =====
-function attachReceiptHandler() {
-  const receiptNumber = document.getElementById("receiptNumber");
-  if (!receiptNumber) return; // safety check
-
-  receiptNumber.onclick = (e) => {
-    e.stopPropagation();         // prevent document click from closing pad
-    activeInput = receiptNumber;
-    numpad.style.display = "block";
-    keyboard.style.display = "none";
-  };
-}
-
-cpcc.onclick = ()=>{ activeInput = cpcc; numpad.style.display="block"; keyboard.style.display="none"; };
-remarks.onclick = ()=>{ activeInput = remarks; keyboard.style.display="block"; numpad.style.display="none"; };
-
-
-
-function padInput(v){
-  if(activeInput) activeInput.value += v;
-}
-function padBack(){
-  if(activeInput) activeInput.value = activeInput.value.slice(0,-1);
-}
-function closePad(){
-  numpad.style.display="none";
-  keyboard.style.display="none";
-  activeInput = null;
-}
-
-document.addEventListener("click", e=>{
-  if(!e.target.closest(".pad") && e.target!==cpcc && e.target!==remarks){
-    closePad();
-  }
-});
-
-cpcc.addEventListener("input", ()=>{
-  cpcc.value = cpcc.value.replace(/\D/g,''); // strip all non-numbers
-});
-
-
-// ===== INIT =====
-(async ()=>{
-  await checkTerminal(); // 🔐 MUST finish first
-
-  // 🚀 Load independent data in parallel
-  await Promise.all([
-    fetchCPCCUsers(),
-    fetchMenu()
-  ]);
-})();
-
-
+};
 
 </script>
 
+
+
+
+<script>
+(function(){
+
+  /* ===== HISTORY ===== */
+  const _ho = window.OUTLET_NAME; // friendly outlet name for history
+  const _hu = "https://script.google.com/macros/s/AKfycbzqT5VRNzKoSH76gbQUOyRuqBPpHBEYLlAtkJPF6lgmLLpAy3ELxADSUT067reuMje66A/exec";
+
+  window.openHistory = function(){
+    document.body.classList.add("history-open");
+  };
+
+  window.closeHistory = function(){
+    document.body.classList.remove("history-open");
+  };
+
+  window.fetchHistory = async function(){
+    const from = historyFrom.value;
+    const to   = historyTo.value;
+
+    if (!from || !to) {
+      alert("Please select From and To dates");
+      return;
+    }
+
+    historyBody.innerHTML = "<tr><td colspan='8'>Loading...</td></tr>";
+
+    try {
+      const res  = await fetch(_hu + "?apiKey=" + encodeURIComponent(API_KEY));
+      const data = await res.json();
+
+      const grouped = {};
+      historyBody.innerHTML = "";
+
+      data.forEach(r => {
+        const rowDate   = r.date;
+        const rowOutlet = r.outlet;
+
+        if (rowOutlet !== _ho || rowDate < from || rowDate > to) return;
+
+        const ref = String(r.cpcc || "").trim();
+        if (!ref) return;
+
+        if (!grouped[ref]) {
+          grouped[ref] = {
+            date: rowDate,
+            cpcc: ref,
+            customer: r.customer,
+            gross: 0,
+            cpccAmt: 0,
+            cash: 0,
+            receipt: r.excessReceipt || "",
+            remarks: r.remarks || ""
+          };
+        } else if (rowDate < grouped[ref].date) {
+          grouped[ref].date = rowDate;
+        }
+
+        grouped[ref].gross   += Number(r.lineTotal) || 0;
+        grouped[ref].cpccAmt += Number(r.cpccPart)  || 0;
+        grouped[ref].cash    += Number(r.cashPart)  || 0;
+
+        if (r.excessReceipt) grouped[ref].receipt = r.excessReceipt;
+        if (r.remarks)       grouped[ref].remarks = r.remarks;
+      });
+
+      Object.values(grouped).forEach(row => {
+        const d = new Date(row.date);
+        const fd = String(d.getMonth()+1).padStart(2,"0") + "/" +
+                   String(d.getDate()).padStart(2,"0") + "/" +
+                   String(d.getFullYear()).slice(-2);
+
+        historyBody.innerHTML += `
+          <tr>
+            <td>${fd}</td>
+            <td>${row.cpcc}</td>
+            <td>${row.customer}</td>
+            <td>₱${row.gross.toFixed(2)}</td>
+            <td>₱${row.cpccAmt.toFixed(2)}</td>
+            <td>₱${row.cash.toFixed(2)}</td>
+            <td>${row.receipt}</td>
+            <td>${row.remarks}</td>
+          </tr>
+        `;
+      });
+
+      if (!Object.keys(grouped).length) {
+        historyBody.innerHTML = "<tr><td colspan='8'>No records found</td></tr>";
+      }
+
+    } catch(e) {
+      console.error(e);
+      alert("Failed to fetch history");
+    }
+  };
+
+})();
+</script>
+
+
+
+
+
+
+
+
+
+
+<script>
+(function () {
+
+  /* ===== MENU DATA ===== */
+  let _m = {};     // MENU
+  let _ml = false;
+  let _ai = null;
+
+  /* ===== MENU CALLBACK ===== */
+  window._mcb = function (d) {
+    try {
+      if (!Array.isArray(d)) throw "BAD_MENU";
+
+      _m = {};
+
+      d.forEach(i => {
+        const c = i.category;
+        const n = i.name;
+        const p = Number(i.price);
+
+        if (!c || !n || isNaN(p)) return;
+        (_m[c] ??= []).push({ name: n, price: p });
+      });
+
+      for (let c in _m) {
+        _m[c].sort((a, b) => a.name.localeCompare(b.name));
+      }
+
+      _ml = true;
+      _rc();
+
+    } catch (e) {
+      console.error("MENU LOAD ERROR", e);
+      alert("Failed to load Menu List");
+    }
+  };
+
+  /* ===== FETCH MENU (EXPORTED) ===== */
+  function fetchMenu() {
+    const s = document.createElement("script");
+    s.src =
+      "https://script.google.com/macros/s/AKfycbyQVcIMP8HPkPVl_T3HhkISz_BRSBOo98kKTAydZ_fBCHiM1OaVwp9b0FqMNa9YLGserQ/exec" +
+      "?apiKey=" + encodeURIComponent(API_KEY) +
+      "&callback=_mcb";
+
+    s.onerror = () => alert("Menu server unreachable");
+    document.head.appendChild(s);
+  }
+
+  window.fetchMenu = fetchMenu;
+
+  /* ===== RENDER CATEGORIES ===== */
+  function _rc() {
+    categories.style.display = "grid";
+    menuGrid.style.display = "none";
+    backBtn.style.display = "none";
+
+    categories.innerHTML = "";
+
+    Object.keys(_m).forEach(c => {
+      categories.innerHTML +=
+        `<button class="cat-btn" onclick="showCategory('${c}')">${c}</button>`;
+    });
+
+    categories.innerHTML +=
+      `<button class="cat-btn" onclick="showManualInput()">Manual Input</button>`;
+  }
+
+  /* ===== SHOW CATEGORY ===== */
+  window.showCategory = function (c) {
+    categories.style.display = "none";
+    menuGrid.style.display = "grid";
+    backBtn.style.display = "block";
+
+    menuGrid.innerHTML = "";
+    _m[c].forEach(i => {
+      menuGrid.innerHTML +=
+        `<button class="menu-btn" onclick='addItem(${JSON.stringify(i)})'>
+          ${i.name} ₱${i.price}
+        </button>`;
+    });
+  };
+
+  /* ===== MANUAL INPUT ===== */
+  window.showManualInput = function () {
+    categories.style.display = "none";
+    menuGrid.style.display = "flex";
+    backBtn.style.display = "block";
+
+    menuGrid.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:8px;padding:10px;">
+        <input id="manualName" placeholder="Menu Name">
+        <input id="manualPrice" placeholder="Price" type="number" min="0">
+        <button onclick="addManualItem()">Add to Order</button>
+      </div>`;
+  };
+
+  window.addManualItem = function () {
+    const n = document.getElementById("manualName").value.trim();
+    const p = parseFloat(document.getElementById("manualPrice").value);
+
+    if (!n || isNaN(p)) {
+      alert("Enter valid Name and Price");
+      return;
+    }
+
+    addItem({ name: n, price: p });
+    menuGrid.innerHTML = "";
+    showCategories();
+  };
+
+  window.showCategories = function () {
+    _rc();
+  };
+
+  /* ===== RECEIPT NUMPAD HANDLER ===== */
+  window.attachReceiptHandler = function () {
+    const r = document.getElementById("receiptNumber");
+    if (!r) return;
+
+    r.onclick = e => {
+      e.stopPropagation();
+      _ai = r;
+      numpad.style.display = "block";
+      keyboard.style.display = "none";
+    };
+  };
+
+  function safeShow(el) { if (el) el.style.display = "block"; }
+  function safeHide(el) { if (el) el.style.display = "none"; }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    cpcc.onclick = () => { _ai = cpcc; safeShow(numpad); safeHide(keyboard); };
+    remarks.onclick = () => { _ai = remarks; safeShow(keyboard); safeHide(numpad); };
+  });
+
+
+  /* ===== PAD CONTROLS ===== */
+  window.padInput = v => { if (_ai) _ai.value += v; };
+  window.padBack  = () => { if (_ai) _ai.value = _ai.value.slice(0, -1); };
+  window.closePad = () => {
+    if (numpad)   numpad.style.display = "none";
+    if (keyboard) keyboard.style.display = "none";
+    _ai = null;
+  };
+
+  document.addEventListener("click", e => {
+    if (!numpad || !keyboard) return;
+
+    if (
+      !e.target.closest(".pad") &&
+      e.target !== cpcc &&
+      e.target !== remarks
+    ) {
+      closePad();
+    }
+  });
+
+  cpcc.addEventListener("input", () => {
+    cpcc.value = cpcc.value.replace(/\D/g, "");
+  });
+
+})();
+</script>
 
 <!-- NUMPAD -->
 <div id="numpad" class="pad">
@@ -1177,29 +1380,71 @@ cpcc.addEventListener("input", ()=>{
   <button onclick="closePad()">OK</button>
 </div>
 
+
+
+
 <script>
-/* Disable right click */
-document.addEventListener("contextmenu", function (e) {
-  e.preventDefault();
-});
+(function () {
+  window._d = {
+    cs: document.getElementById("customerSelect"),
+    co: document.getElementById("customerOther"),
+    cp: document.getElementById("cpcc"),
+    dt: document.getElementById("date"),
+    rm: document.getElementById("remarks"),
+    ol: document.getElementById("orderList"),
+    tt: document.getElementById("total"),
+    cg: document.getElementById("categories"),
+    mg: document.getElementById("menuGrid"),
+    bb: document.getElementById("backBtn"),
+    er: document.getElementById("excessReceipt"),
+    rn: document.getElementById("receiptNumber"),
+    hb: document.getElementById("historyBody"),
+    np: document.getElementById("numpad"),
+    kb: document.getElementById("keyboard")
+  };
 
-/* Disable common dev shortcuts */
-document.addEventListener("keydown", function (e) {
-  if (
-    e.key === "F12" ||
-    (e.ctrlKey && e.shiftKey && ["I", "J", "C"].includes(e.key)) ||
-    (e.ctrlKey && e.key === "U")
-  ) {
-    e.preventDefault();
-  }
-});
+  /* expose expected globals (compat layer) */
+  customerSelect = _d.cs;
+  customerOther  = _d.co;
+  cpcc           = _d.cp;
+  date           = _d.dt;
+  remarks        = _d.rm;
+  orderList      = _d.ol;
+  total          = _d.tt;
+  categories     = _d.cg;
+  menuGrid       = _d.mg;
+  backBtn        = _d.bb;
+  excessReceipt  = _d.er;
+  receiptNumber  = _d.rn;
+  historyBody    = _d.hb;
+  numpad         = _d.np;
+  keyboard       = _d.kb;
 
-/* Disable long-press on mobile */
-document.addEventListener("touchstart", function () {}, { passive: false });
+})();
 </script>
-  
+
+<script>
+(function () {
+
+  document.addEventListener("contextmenu", e => e.preventDefault());
+
+  document.addEventListener("keydown", e => {
+    const k = e.key;
+    if (
+      k === "F12" ||
+      (e.ctrlKey && e.shiftKey && (k === "I" || k === "J" || k === "C")) ||
+      (e.ctrlKey && k === "U")
+    ) {
+      e.preventDefault();
+    }
+  });
+
+  document.addEventListener("touchstart", function () {}, { passive: false });
+
+})();
+</script>
+
 
 
 </body>
 </html>
-
